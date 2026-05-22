@@ -1160,6 +1160,42 @@ Conversiones 25% | Negativos 20% | Estructura 15%
 Keywords 15% | Anuncios 15% | Configuración 10%
 Checks críticos (G42-G-CTV1): multiplicador 5x
 
+════════════════════════════════════════
+LÓGICA CONDICIONAL — PMAX PRESUPUESTO
+════════════════════════════════════════
+Cuando los datos incluyan CPA real de PMax, compara con el CPA objetivo declarado por el usuario:
+
+CASO A — CPA real PMax > CPA objetivo:
+  → NO recomendar en quickWins ni en proximosPasos escalar o aumentar presupuesto PMax.
+  → En su lugar, añadir en quickWins: {"accion": "Antes de escalar PMax, ejecutar Script de Negativos PMax para reducir CPA actual de [CPA_REAL]€ al objetivo de [CPA_OBJETIVO]€", "impacto": "Reducir coste por lead en PMax antes de invertir más presupuesto", "tiempo": "30 min"}
+  → Sustituye [CPA_REAL] y [CPA_OBJETIVO] con los valores numéricos reales.
+
+CASO B — CPA real PMax <= CPA objetivo:
+  → Mantener la recomendación habitual de redistribuir o escalar presupuesto PMax si procede.
+
+════════════════════════════════════════
+DIAGNÓSTICO CVR = 0%
+════════════════════════════════════════
+Cuando detectes CVR = 0% en una campaña, aplica este diagnóstico diferencial en lugar del genérico:
+
+CASO A — CTR < 2% Y CVR = 0%:
+  → Causa probable: tráfico informativo, keywords genéricas o concordancias demasiado amplias.
+  → En checksCriticos: resultado WARNING (no FAIL) con hallazgo "CTR bajo (< 2%) y CVR nulo sugieren tráfico informativo o keywords de baja intención. Ejecutar Script de Negativos Search antes de revisar el tracking".
+  → En problemas: título "Tráfico informativo captado por keywords genéricas", pasos: ["Ejecutar Script de Negativos Search para identificar términos sin conversión y alto gasto", "Revisar concordancias y reducir amplia si está activa con CPC manual", "Añadir negativos de términos informativos: gratis, cursos, qué es, opiniones, wikipedia"].
+
+CASO B — CTR >= 2% Y CVR = 0%:
+  → Causa probable: sistema de tracking roto o problema en la landing page.
+  → En checksCriticos: resultado FAIL con hallazgo "CTR aceptable (≥ 2%) pero CVR nulo indica sistema de tracking posiblemente roto o landing page sin formulario/llamada funcional".
+  → En problemas: título "Sistema de tracking posiblemente roto", pasos: ["Verificar tag de conversión con Google Tag Assistant", "Comprobar que la thank-you page dispara la conversión", "Revisar que el formulario de contacto envía correctamente"].
+
+════════════════════════════════════════
+PRÓXIMOS PASOS — SCRIPTS AUTOMÁTICOS
+════════════════════════════════════════
+Incluye SIEMPRE estos puntos en proximosPasos cuando apliquen (además de los pasos estratégicos habituales):
+- Si PMax activa → incluir en semana1: "Ejecutar Script de Negativos PMax para limpiar términos informativos y reducir CPA"
+- Si Search con CVR < 2% o CVR = 0% → incluir en semana1: "Ejecutar Script de Negativos Search antes de modificar pujas o presupuestos"
+- Si ambos aplican, incluir ambos en semana1 como primeras acciones prioritarias.
+
 INSTRUCCIÓN IMPORTANTE: En checksCriticos incluye TODOS los checks evaluados. Para checks sin datos suficientes usa WARNING con hallazgo explicativo. Los arrays checksPMax/checksDemandGen/checksVideo solo se incluyen si ese tipo de campaña está activo.
 
 RESPONDE ÚNICAMENTE EN ESTE FORMATO JSON EXACTO (sin texto adicional):
