@@ -1,0 +1,15 @@
+Campaña,Asset Group,Formato,Audiencia señal,Impresiones,Clics,CTR (%),Coste (€),Conversiones,CPA (€),Ad Strength,Observaciones
+DemandGen_Principal,AG_Principal,Imagen,Remarketing sitio web,0,0,0,0,0,,,"Rellenar con datos exportados de Google Ads"
+DemandGen_Principal,AG_Principal,Vídeo,Segmentos de intención personalizados,0,0,0,0,0,,,"Rellenar con datos exportados de Google Ads"
+DemandGen_Retargeting,AG_Retargeting,Imagen,Visitantes últimos 30 días,0,0,0,0,0,,,"Rellenar con datos exportados de Google Ads"
+
+INSTRUCCIONES DE USO:
+1. En Google Ads ve a: Campañas → Demand Gen → Exportar → CSV
+2. Copia los datos en las columnas correspondientes de este archivo
+3. Usa la columna "Observaciones" para anotar acciones a tomar
+4. Revisa columna Ad Strength: objetivo mínimo "Bueno" o "Excelente"
+
+CHECKS DEMAND GEN (Rocha V2.0):
+G-DG1: Campañas de vídeo antiguas migradas a Demand Gen
+G-DG2: Límites de frecuencia VAC eliminados
+G-DG3: Sin Floodlight en campañas CTV

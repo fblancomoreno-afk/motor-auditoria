@@ -1,0 +1,21 @@
+Campaña,Formato,Audiencia,Impresiones,Vistas,VTR (%),Clics,CTR (%),Coste (€),Conv. view-through,Conv. click,CPV (€),Exclusiones placement activas,Observaciones
+YouTube_InStream,In-stream saltable,Remarketing,0,0,0,0,0,0,0,0,,"Sí / No","Rellenar con datos exportados de Google Ads"
+YouTube_Bumper,Bumper 6s,Segmentos de interés,0,0,0,0,0,0,0,0,,"Sí / No","Rellenar con datos exportados de Google Ads"
+YouTube_Discovery,Video Discovery,Palabras clave,0,0,0,0,0,0,0,0,,"Sí / No","Rellenar con datos exportados de Google Ads"
+
+INSTRUCCIONES DE USO:
+1. En Google Ads ve a: Campañas → Video → Exportar → CSV
+2. Copia los datos en las columnas correspondientes de este archivo
+3. Verifica que la columna "Exclusiones placement activas" sea "Sí" en todas
+4. Si VTR < 25% en In-stream: revisar primeros 5 segundos del vídeo
+
+CHECKS VIDEO / YOUTUBE (Rocha V2.0):
+GV1: Formatos correctos: in-stream, bumpers, discovery
+GV2: View-through conversions configuradas
+GV3: Exclusiones de placement activas
+
+FORMATOS RECOMENDADOS:
+- In-stream saltable: 15-30s, CTA al inicio
+- Bumper 6s: mensaje único, sin CTA de clic
+- Video Discovery: miniatura + título optimizados
+- Formatos nativos: 16:9, 1:1, 9:16 (para Shorts)

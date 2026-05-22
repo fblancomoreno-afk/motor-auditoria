@@ -575,6 +575,28 @@ textarea.inp {
 }
 
 /* =============================================
+   ACCIONES RÁPIDAS
+============================================= */
+.aq-grid { display: flex; flex-direction: column; gap: 8px; }
+.btn-aq {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  background: transparent;
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background .2s;
+}
+.btn-aq:hover { background: rgba(201,169,110,.1); }
+
+/* =============================================
    PRINT / PDF
 ============================================= */
 @media print {
@@ -1445,6 +1467,22 @@ function renderResults(d) {
     <button class="btn-pdf" onclick="downloadPDF()">📄 DESCARGAR PDF</button>
     <button class="btn-new" onclick="newAudit()">NUEVA AUDITORÍA</button>
   </div>`;
+
+  /* --- ACCIONES RÁPIDAS --- */
+  const acciones = [];
+  const cbChecked = [...document.querySelectorAll('.cb-row input:checked')].map(c => c.value);
+  if (cbChecked.includes('Search'))     acciones.push({ label: 'SCRIPT NEGATIVOS SEARCH', file: '/downloads/script-negativos-search.js' });
+  if (cbChecked.includes('PMax'))       acciones.push({ label: 'SCRIPT NEGATIVOS PMAX',   file: '/downloads/script-negativos-pmax.js' });
+  if (cbChecked.includes('Demand Gen')) acciones.push({ label: 'CSV DEMAND GEN',           file: '/downloads/csv-demand-gen.csv' });
+  if (cbChecked.includes('Video'))      acciones.push({ label: 'CSV YOUTUBE',               file: '/downloads/csv-youtube.csv' });
+
+  if (acciones.length) {
+    h += `<div class="card"><div class="card-title">ACCIONES RÁPIDAS</div><div class="aq-grid">`;
+    acciones.forEach(a => {
+      h += `<a class="btn-aq" href="${a.file}" download>${a.label}</a>`;
+    });
+    h += `</div></div>`;
+  }
 
   h += '</div>';
   document.getElementById('results').innerHTML = h;
