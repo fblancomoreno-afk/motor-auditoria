@@ -1,61 +1,44 @@
 /**
  * SCRIPT NEGATIVOS SEARCH — ADS ENGINE AUDIT V2.0
  * Francisco Blanco © 2026 — franciscoblanco.net
- *
- * Analiza los términos de búsqueda de los últimos 30 días y genera
- * una lista de candidatos a negativos: términos con gasto > umbral
- * y 0 conversiones.
- *
- * INSTRUCCIONES:
- * 1. Abre Google Ads → Herramientas → Scripts
- * 2. Crea un script nuevo y pega este código
- * 3. Ajusta GASTO_MINIMO y DIAS según tu cuenta
- * 4. Ejecuta en modo "Vista previa" primero
  */
 
 var CONFIG = {
-  GASTO_MINIMO_EUR: 5,   // € mínimos gastados para considerar el término
-  DIAS:             30,   // ventana de análisis
-  EXPORTAR_EMAIL:   ''    // deja vacío para no enviar email
+  GASTO_MINIMO_EUR: 5,
+  DIAS:             30,
+  EXPORTAR_EMAIL:   ''
 };
 
 function main() {
-  var fechaFin    = new Date();
-  var fechaInicio = new Date(fechaFin.getTime() - CONFIG.DIAS * 24 * 60 * 60 * 1000);
-
-  var fmt = function(d) {
-    return Utilities.formatDate(d, AdsApp.currentAccount().getTimeZone(), 'yyyyMMdd');
-  };
-
   var query =
-    'SELECT Query, Clicks, Impressions, Cost, Conversions, CampaignName, AdGroupName ' +
-    'FROM SEARCH_QUERY_PERFORMANCE_REPORT ' +
-    'WHERE Conversions = 0 ' +
-    '  AND Cost > ' + Math.round(CONFIG.GASTO_MINIMO_EUR * 1000000) + ' ' +
-    'DURING ' + fmt(fechaInicio) + ',' + fmt(fechaFin);
+    'SELECT search_term_view.search_term, metrics.clicks, metrics.impressions, ' +
+    'metrics.cost_micros, metrics.conversions, campaign.name, ad_group.name ' +
+    'FROM search_term_view ' +
+    'WHERE metrics.conversions = 0 ' +
+    '  AND metrics.cost_micros > ' + Math.round(CONFIG.GASTO_MINIMO_EUR * 1000000) + ' ' +
+    'DURING LAST_30_DAYS';
 
   var report = AdsApp.report(query);
   var rows   = report.rows();
-
   var candidatos = [];
+
   while (rows.hasNext()) {
     var r = rows.next();
     candidatos.push({
-      termino:  r['Query'],
-      campana:  r['CampaignName'],
-      adGroup:  r['AdGroupName'],
-      clics:    parseInt(r['Clicks'], 10),
-      imps:     parseInt(r['Impressions'], 10),
-      costeEur: (parseInt(r['Cost'], 10) / 1000000).toFixed(2)
+      termino:  r['search_term_view.search_term'],
+      campana:  r['campaign.name'],
+      adGroup:  r['ad_group.name'],
+      clics:    parseInt(r['metrics.clicks'], 10),
+      imps:     parseInt(r['metrics.impressions'], 10),
+      costeEur: (parseInt(r['metrics.cost_micros'], 10) / 1000000).toFixed(2)
     });
   }
 
-  // Ordenar por coste descendente
   candidatos.sort(function(a, b) { return parseFloat(b.costeEur) - parseFloat(a.costeEur); });
 
   Logger.log('======================================');
   Logger.log('CANDIDATOS A NEGATIVOS — SEARCH');
-  Logger.log('Período: últimos ' + CONFIG.DIAS + ' días');
+  Logger.log('Período: últimos 30 días');
   Logger.log('Umbral gasto: >' + CONFIG.GASTO_MINIMO_EUR + '€ con 0 conv.');
   Logger.log('======================================');
 
