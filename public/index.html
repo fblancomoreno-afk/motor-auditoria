@@ -1241,20 +1241,30 @@ RESPONDE ÚNICAMENTE EN ESTE FORMATO JSON EXACTO (sin texto adicional):
    PREPROCESADO CSV — filtra términos de búsqueda
 ================================================ */
 function filtrarCSV(raw) {
-  const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const allLines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  if (allLines.length < 20) return raw;
 
-  if (lines.length < 50) return raw;
+  // Saltar filas de metadatos hasta encontrar el header real
+  let headerIdx = -1;
+  for (let i = 0; i < Math.min(10, allLines.length); i++) {
+    const lower = allLines[i].toLowerCase();
+    if ((lower.includes('coste') || lower.includes('cost')) &&
+        (lower.includes('clic') || lower.includes('click'))) {
+      headerIdx = i;
+      break;
+    }
+  }
+  if (headerIdx === -1) return raw;
 
-  const header = lines[0].toLowerCase();
-  const esCSVTerminos = header.includes('coste') || header.includes('cost') ||
-                        header.includes('conversiones') || header.includes('conversions') ||
-                        header.includes('clics') || header.includes('clicks');
+  const lines = allLines.slice(headerIdx);
+  if (lines.length < 20) return raw;
 
-  if (!esCSVTerminos) return raw;
+  const cols = lines[0].split(',').map(c => c.trim().toLowerCase()
+    .replace(/"/g,'')
+    .normalize('NFD').replace(/[̀-ͯ]/g,''));
 
-  const cols = lines[0].split(',').map(c => c.trim().toLowerCase().replace(/"/g,''));
-  const iCoste = cols.findIndex(c => c.includes('coste') || c.includes('cost'));
-  const iConv  = cols.findIndex(c => c.includes('conversiones') || c.includes('conversions'));
+  const iCoste = cols.findIndex(c => c === 'coste' || c === 'cost');
+  const iConv  = cols.findIndex(c => c === 'conversiones' || c === 'conversions');
 
   if (iCoste === -1 || iConv === -1) return raw;
 
@@ -1264,11 +1274,10 @@ function filtrarCSV(raw) {
   const conConv  = [];
 
   for (let i = 1; i < lines.length; i++) {
-    const parts = lines[i].split(',').map(p => p.trim().replace(/"/g,''));
+    const parts = lines[i].split(',').map(p => p.trim().replace(/"/g,'').replace(',','.'));
     const coste = parseFloat(parts[iCoste]) || 0;
     const conv  = parseFloat(parts[iConv])  || 0;
     gastoTotal += coste;
-
     if (conv > 0) conConv.push({ line: lines[i], coste, conv });
     else if (coste > 0) conGasto.push({ line: lines[i], coste });
   }
@@ -1278,16 +1287,13 @@ function filtrarCSV(raw) {
 
   const selConv  = conConv.slice(0, 20);
   const selGasto = conGasto.slice(0, 150 - selConv.length);
-  const seleccionadas = [...selConv, ...selGasto];
-  seleccionadas.sort((a, b) => b.coste - a.coste);
+  const sel = [...selConv, ...selGasto].sort((a,b) => b.coste - a.coste);
 
-  const resumen = [
-    `[PREPROCESADO AUTOMÁTICO: ${totalFilas} filas originales | Gasto total período: ${gastoTotal.toFixed(2)}€ | Se muestran ${seleccionadas.length} filas filtradas por relevancia]`,
+  return [
+    `[PREPROCESADO: ${totalFilas} filas originales | Gasto total: ${gastoTotal.toFixed(2)}€ | Mostrando ${sel.length} filas filtradas por coste]`,
     lines[0],
-    ...seleccionadas.map(r => r.line)
+    ...sel.map(r => r.line)
   ].join('\n');
-
-  return resumen;
 }
 
 /* ================================================
