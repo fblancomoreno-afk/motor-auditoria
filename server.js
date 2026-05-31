@@ -6,7 +6,7 @@ require('dotenv').config();
 const app = express();
 app.set('trust proxy', 1);
 
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '500kb' }));
 app.use(express.urlencoded({ extended: false }));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'ads-audit-secret-2026',

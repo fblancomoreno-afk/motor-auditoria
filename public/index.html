@@ -1231,6 +1231,59 @@ RESPONDE ÚNICAMENTE EN ESTE FORMATO JSON EXACTO (sin texto adicional):
 }`;
 
 /* ================================================
+   PREPROCESADO CSV — filtra términos de búsqueda
+================================================ */
+function filtrarCSV(raw) {
+  const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+  if (lines.length < 50) return raw;
+
+  const header = lines[0].toLowerCase();
+  const esCSVTerminos = header.includes('coste') || header.includes('cost') ||
+                        header.includes('conversiones') || header.includes('conversions') ||
+                        header.includes('clics') || header.includes('clicks');
+
+  if (!esCSVTerminos) return raw;
+
+  const cols = lines[0].split(',').map(c => c.trim().toLowerCase().replace(/"/g,''));
+  const iCoste = cols.findIndex(c => c.includes('coste') || c.includes('cost'));
+  const iConv  = cols.findIndex(c => c.includes('conversiones') || c.includes('conversions'));
+
+  if (iCoste === -1 || iConv === -1) return raw;
+
+  const totalFilas = lines.length - 1;
+  let gastoTotal = 0;
+  const conGasto = [];
+  const conConv  = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const parts = lines[i].split(',').map(p => p.trim().replace(/"/g,''));
+    const coste = parseFloat(parts[iCoste]) || 0;
+    const conv  = parseFloat(parts[iConv])  || 0;
+    gastoTotal += coste;
+
+    if (conv > 0) conConv.push({ line: lines[i], coste, conv });
+    else if (coste > 0) conGasto.push({ line: lines[i], coste });
+  }
+
+  conGasto.sort((a, b) => b.coste - a.coste);
+  conConv.sort((a, b) => b.coste - a.coste);
+
+  const selConv  = conConv.slice(0, 20);
+  const selGasto = conGasto.slice(0, 150 - selConv.length);
+  const seleccionadas = [...selConv, ...selGasto];
+  seleccionadas.sort((a, b) => b.coste - a.coste);
+
+  const resumen = [
+    `[PREPROCESADO AUTOMÁTICO: ${totalFilas} filas originales | Gasto total período: ${gastoTotal.toFixed(2)}€ | Se muestran ${seleccionadas.length} filas filtradas por relevancia]`,
+    lines[0],
+    ...seleccionadas.map(r => r.line)
+  ].join('\n');
+
+  return resumen;
+}
+
+/* ================================================
    FUNCIÓN PRINCIPAL: EJECUTAR AUDITORÍA
 ================================================ */
 async function runAudit() {
@@ -1247,6 +1300,7 @@ async function runAudit() {
   const datos = activeTab === 'file'
     ? (window._fileData || '').trim()
     : document.getElementById('f-datos').value.trim();
+  const datosFiltrados = filtrarCSV(datos);
 
   if (!cliente) { showErr('Introduce el nombre del cliente.'); return; }
   if (!datos) {
@@ -1280,7 +1334,7 @@ DATOS DEL CLIENTE:
 IMPORTANTE — aplica los umbrales correspondientes al tamaño de cuenta: ${tamanoLabel}
 
 DATOS EXPORTADOS DE GOOGLE ADS:
-${datos}
+${datosFiltrados}
 
 Fecha y hora del análisis: ${fecha} ${hora}
 
