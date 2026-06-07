@@ -518,6 +518,84 @@ textarea.inp {
 .file-zone input[type="file"] { display: none; }
 .file-info { font-size: 11px; color: var(--pass); margin-top: 8px; min-height: 16px; }
 
+/* =============================================
+   MULTI-CSV — CSVS ADICIONALES
+============================================= */
+.csv-extra {
+  margin-top: 14px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+.csv-extra-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--t2);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.csv-extra-label span {
+  font-size: 9px;
+  color: var(--gold);
+  border: 1px solid rgba(201,169,110,.3);
+  padding: 2px 7px;
+  letter-spacing: 1px;
+}
+.csv-slot {
+  margin-bottom: 10px;
+}
+.csv-slot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+.csv-slot-lbl {
+  font-size: 10px;
+  color: var(--t2);
+  letter-spacing: 1px;
+}
+.csv-slot-clear {
+  font-size: 10px;
+  color: var(--t2);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color .2s;
+}
+.csv-slot-clear:hover { color: var(--fail); }
+.file-zone-sm {
+  border: 1px dashed var(--border);
+  background: var(--surface);
+  padding: 14px 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.file-zone-sm:hover { border-color: var(--gold); }
+.file-zone-sm input[type="file"] { display: none; }
+.file-zone-sm-txt { font-size: 11px; color: var(--t2); }
+.file-info-sm { font-size: 10px; color: var(--pass); margin-top: 5px; min-height: 14px; }
+.csv-sources-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  color: var(--gold);
+  background: rgba(201,169,110,.08);
+  border: 1px solid rgba(201,169,110,.2);
+  padding: 3px 8px;
+  margin-top: 8px;
+}
+
 /* Botón datos de prueba */
 .btn-demo {
   display: inline-flex; align-items: center; gap: 5px;
@@ -772,7 +850,7 @@ textarea.inp {
     <div class="form-sec">
       <div class="sec-title">02 — DATOS EXPORTADOS DE GOOGLE ADS</div>
 
-      <!-- Tab switcher -->
+      <!-- Tab switcher CSV 1 -->
       <div class="tab-sw">
         <button class="tab-btn active" id="tab-file" onclick="switchTab('file')">📎 Subir archivo</button>
         <button class="tab-btn" id="tab-paste" onclick="switchTab('paste')">📋 Pegar datos</button>
@@ -782,8 +860,8 @@ textarea.inp {
       <div class="tab-pane active" id="pane-file">
         <div class="file-zone" onclick="document.getElementById('f-file').click()">
           <div class="file-zone-icon">📁</div>
-          <div class="file-zone-txt">Haz clic para subir el CSV, XLSX o TXT<br>exportado de Google Ads</div>
-          <input type="file" id="f-file" accept=".csv,.xlsx,.txt" onchange="handleFile(this)">
+          <div class="file-zone-txt">CSV 1 — principal<br><small style="font-size:10px;opacity:.7">Términos de búsqueda, Campañas o Keywords</small></div>
+          <input type="file" id="f-file" accept=".csv,.xlsx,.txt" onchange="handleFile(this, 1)">
         </div>
         <div id="file-info" class="file-info"></div>
       </div>
@@ -791,19 +869,74 @@ textarea.inp {
       <!-- Pane B: pegar texto -->
       <div class="tab-pane" id="pane-paste">
         <button class="btn-demo" onclick="loadTestData()">⚡ Cargar datos de prueba — Abogado Madrid</button>
-        <textarea id="f-datos" class="inp" placeholder="Pega aquí los datos exportados de Google Ads:
-- Términos de búsqueda (últimos 14 días)
-- Campañas con métricas (impresiones, clics, coste, conversiones)
-- Keywords con Quality Score
-- Anuncios con Ad Strength
+        <textarea id="f-datos" class="inp" placeholder="Pega aquí el CSV 1 exportado de Google Ads:
+- Términos de búsqueda
+- Campañas con métricas
+- Keywords con Quality Score"></textarea>
+      </div>
 
-También puedes pegar datos de prueba para testear el motor."></textarea>
+      <!-- == CSVS ADICIONALES (2 y 3) == -->
+      <div class="csv-extra">
+        <div class="csv-extra-label">
+          CSVs adicionales <span>OPCIONAL</span>
+        </div>
+
+        <!-- CSV 2 -->
+        <div class="csv-slot">
+          <div class="csv-slot-header">
+            <span class="csv-slot-lbl">CSV 2 — Términos de búsqueda / Campañas</span>
+            <button class="csv-slot-clear" onclick="clearCsvSlot(2)" title="Limpiar">✕</button>
+          </div>
+          <div class="tab-sw" style="margin-bottom:6px;">
+            <button class="tab-btn active" id="tab2-file" onclick="switchTab2('file')">📎 Archivo</button>
+            <button class="tab-btn" id="tab2-paste" onclick="switchTab2('paste')">📋 Pegar</button>
+          </div>
+          <div id="pane2-file" class="tab-pane active">
+            <div class="file-zone-sm" onclick="document.getElementById('f-file2').click()">
+              <span style="font-size:18px;">📁</span>
+              <span class="file-zone-sm-txt">Subir CSV 2</span>
+              <input type="file" id="f-file2" accept=".csv,.xlsx,.txt" onchange="handleFile(this, 2)">
+            </div>
+          </div>
+          <div id="pane2-paste" class="tab-pane">
+            <textarea id="f-datos2" class="inp" style="min-height:100px;" placeholder="Pega aquí el CSV 2..."></textarea>
+          </div>
+          <div id="file-info2" class="file-info-sm"></div>
+        </div>
+
+        <!-- CSV 3 -->
+        <div class="csv-slot">
+          <div class="csv-slot-header">
+            <span class="csv-slot-lbl">CSV 3 — Keywords / Grupos de anuncios</span>
+            <button class="csv-slot-clear" onclick="clearCsvSlot(3)" title="Limpiar">✕</button>
+          </div>
+          <div class="tab-sw" style="margin-bottom:6px;">
+            <button class="tab-btn active" id="tab3-file" onclick="switchTab3('file')">📎 Archivo</button>
+            <button class="tab-btn" id="tab3-paste" onclick="switchTab3('paste')">📋 Pegar</button>
+          </div>
+          <div id="pane3-file" class="tab-pane active">
+            <div class="file-zone-sm" onclick="document.getElementById('f-file3').click()">
+              <span style="font-size:18px;">📁</span>
+              <span class="file-zone-sm-txt">Subir CSV 3</span>
+              <input type="file" id="f-file3" accept=".csv,.xlsx,.txt" onchange="handleFile(this, 3)">
+            </div>
+          </div>
+          <div id="pane3-paste" class="tab-pane">
+            <textarea id="f-datos3" class="inp" style="min-height:100px;" placeholder="Pega aquí el CSV 3..."></textarea>
+          </div>
+          <div id="file-info3" class="file-info-sm"></div>
+        </div>
+
+        <div id="csv-sources-summary" class="csv-sources-badge" style="display:none;">
+          📊 <span id="csv-count-label"></span>
+        </div>
       </div>
 
       <div class="data-help">
         <strong>¿Cómo exportar de Google Ads?</strong>
         Términos de búsqueda → Descargar → CSV (últimos 14 días)<br>
-        Campañas → Descargar → CSV con todas las columnas
+        Campañas → Descargar → CSV con todas las columnas<br>
+        Keywords → Palabras clave → Descargar → CSV
       </div>
     </div>
 
@@ -913,7 +1046,7 @@ function resetBtn() {
 }
 
 /* ================================================
-   TAB SWITCHER
+   TAB SWITCHERS
 ================================================ */
 function switchTab(tab) {
   ['file','paste'].forEach(t => {
@@ -922,27 +1055,76 @@ function switchTab(tab) {
   });
 }
 
+function switchTab2(tab) {
+  ['file','paste'].forEach(t => {
+    document.getElementById('tab2-' + t).classList.toggle('active', t === tab);
+    document.getElementById('pane2-' + t).classList.toggle('active', t === tab);
+  });
+}
+
+function switchTab3(tab) {
+  ['file','paste'].forEach(t => {
+    document.getElementById('tab3-' + t).classList.toggle('active', t === tab);
+    document.getElementById('pane3-' + t).classList.toggle('active', t === tab);
+  });
+}
+
 /* ================================================
-   CARGA DE ARCHIVO CSV/TXT
+   CARGA DE ARCHIVOS — MULTI CSV
 ================================================ */
-function handleFile(input) {
+function handleFile(input, slot) {
   const file = input.files[0];
   if (!file) return;
-  const info = document.getElementById('file-info');
+  const infoId = slot === 1 ? 'file-info' : `file-info${slot}`;
+  const info = document.getElementById(infoId);
   info.textContent = 'Leyendo archivo...';
 
   const reader = new FileReader();
   reader.onload = function(e) {
     const content = e.target.result;
     const lines = content.split('\n').filter(l => l.trim()).length;
-    window._fileData = content;
-    info.textContent = `✓ ${file.name} — ${lines} filas detectadas`;
+    window[`_fileData${slot}`] = content;
+    info.textContent = `✓ ${file.name} — ${lines} filas`;
+    updateCsvSummary();
   };
   reader.onerror = function() {
-    info.textContent = '✗ Error al leer el archivo. Prueba con la pestaña "Pegar datos".';
+    info.textContent = '✗ Error al leer el archivo.';
     info.style.color = 'var(--fail)';
   };
   reader.readAsText(file, 'UTF-8');
+}
+
+function clearCsvSlot(slot) {
+  window[`_fileData${slot}`] = null;
+  const fileInput = document.getElementById(`f-file${slot}`);
+  if (fileInput) fileInput.value = '';
+  const textarea = document.getElementById(`f-datos${slot}`);
+  if (textarea) textarea.value = '';
+  const info = document.getElementById(`file-info${slot}`);
+  if (info) info.textContent = '';
+  updateCsvSummary();
+}
+
+function updateCsvSummary() {
+  const activeTab = document.getElementById('tab-file').classList.contains('active') ? 'file' : 'paste';
+  const d1 = activeTab === 'file' ? (window._fileData1 || '') : (document.getElementById('f-datos')?.value || '');
+
+  const tab2 = document.getElementById('tab2-file').classList.contains('active') ? 'file' : 'paste';
+  const d2 = tab2 === 'file' ? (window._fileData2 || '') : (document.getElementById('f-datos2')?.value || '');
+
+  const tab3 = document.getElementById('tab3-file').classList.contains('active') ? 'file' : 'paste';
+  const d3 = tab3 === 'file' ? (window._fileData3 || '') : (document.getElementById('f-datos3')?.value || '');
+
+  const count = [d1, d2, d3].filter(d => d.trim()).length;
+  const badge = document.getElementById('csv-sources-summary');
+  const label = document.getElementById('csv-count-label');
+
+  if (count > 1) {
+    badge.style.display = 'inline-flex';
+    label.textContent = `${count} fuentes de datos cargadas — análisis cruzado`;
+  } else {
+    badge.style.display = 'none';
+  }
 }
 
 /* ================================================
@@ -1203,6 +1385,16 @@ Incluye SIEMPRE estos puntos en proximosPasos cuando apliquen (además de los pa
 - Si Search con CVR < 2% o CVR = 0% → incluir en semana1: "Ejecutar Script de Negativos Search antes de modificar pujas o presupuestos"
 - Si ambos aplican, incluir ambos en semana1 como primeras acciones prioritarias.
 
+════════════════════════════════════════
+ANÁLISIS MULTI-FUENTE
+════════════════════════════════════════
+Cuando recibas datos de múltiples CSVs (indicados como CSV 1, CSV 2, CSV 3):
+- Cruza la información entre fuentes para enriquecer el análisis
+- Si tienes términos de búsqueda + keywords: detecta qué queries reales activan cada keyword y qué porcentaje del gasto tiene 0 conversiones
+- Si tienes campañas + keywords: detecta keywords de bajo QS que están consumiendo presupuesto en campañas activas
+- Si tienes campañas + términos: identifica discrepancias entre intención de búsqueda y keywords configuradas
+- Indica en el informe cuando un hallazgo proviene del cruce de múltiples fuentes
+
 INSTRUCCIÓN IMPORTANTE: En checksCriticos incluye TODOS los checks evaluados. Para checks sin datos suficientes usa WARNING con hallazgo explicativo. Los arrays checksPMax/checksDemandGen/checksVideo solo se incluyen si ese tipo de campaña está activo.
 
 RESPONDE ÚNICAMENTE EN ESTE FORMATO JSON EXACTO (sin texto adicional):
@@ -1238,13 +1430,12 @@ RESPONDE ÚNICAMENTE EN ESTE FORMATO JSON EXACTO (sin texto adicional):
 }`;
 
 /* ================================================
-   PREPROCESADO CSV — filtra términos de búsqueda
+   PREPROCESADO CSV
 ================================================ */
 function filtrarCSV(raw) {
   const allLines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
   if (allLines.length < 20) return raw;
 
-  // Saltar filas de metadatos hasta encontrar el header real
   let headerIdx = -1;
   for (let i = 0; i < Math.min(10, allLines.length); i++) {
     const lower = allLines[i].toLowerCase();
@@ -1309,18 +1500,44 @@ async function runAudit() {
   const objetivo = document.getElementById('f-objetivo').value;
   const campanas = getCampanas();
 
+  // CSV 1 — principal
   const activeTab = document.getElementById('tab-file').classList.contains('active') ? 'file' : 'paste';
-  const datos = activeTab === 'file'
-    ? (window._fileData || '').trim()
+  const datos1 = activeTab === 'file'
+    ? (window._fileData1 || '').trim()
     : document.getElementById('f-datos').value.trim();
-  const datosFiltrados = filtrarCSV(datos);
+
+  // CSV 2 — opcional
+  const activeTab2 = document.getElementById('tab2-file').classList.contains('active') ? 'file' : 'paste';
+  const datos2 = activeTab2 === 'file'
+    ? (window._fileData2 || '').trim()
+    : document.getElementById('f-datos2').value.trim();
+
+  // CSV 3 — opcional
+  const activeTab3 = document.getElementById('tab3-file').classList.contains('active') ? 'file' : 'paste';
+  const datos3 = activeTab3 === 'file'
+    ? (window._fileData3 || '').trim()
+    : document.getElementById('f-datos3').value.trim();
 
   if (!cliente) { showErr('Introduce el nombre del cliente.'); return; }
-  if (!datos) {
+  if (!datos1) {
     showErr(activeTab === 'file'
-      ? 'Sube un archivo CSV/TXT exportado de Google Ads, o cambia a la pestaña "Pegar datos".'
-      : 'Pega los datos exportados de Google Ads o carga los datos de prueba.');
+      ? 'Sube al menos el CSV 1 exportado de Google Ads.'
+      : 'Pega los datos del CSV 1 o carga los datos de prueba.');
     return;
+  }
+
+  // Filtrar y construir bloque de datos
+  const d1Filtrado = filtrarCSV(datos1);
+  const d2Filtrado = datos2 ? filtrarCSV(datos2) : '';
+  const d3Filtrado = datos3 ? filtrarCSV(datos3) : '';
+
+  const fuentesCount = [datos1, datos2, datos3].filter(d => d).length;
+
+  let bloquesDatos = `=== CSV 1 — DATOS PRINCIPALES ===\n${d1Filtrado}`;
+  if (d2Filtrado) bloquesDatos += `\n\n=== CSV 2 — DATOS ADICIONALES ===\n${d2Filtrado}`;
+  if (d3Filtrado) bloquesDatos += `\n\n=== CSV 3 — DATOS ADICIONALES ===\n${d3Filtrado}`;
+  if (fuentesCount > 1) {
+    bloquesDatos = `[ANÁLISIS MULTI-FUENTE: ${fuentesCount} CSVs cargados — cruza la información entre ellos]\n\n` + bloquesDatos;
   }
 
   const tamanoLabel = { pequeña: 'Pequeña (<500€/mes)', media: 'Media (500-2000€/mes)', grande: 'Grande (>2000€/mes)' }[tamano] || tamano;
@@ -1332,6 +1549,7 @@ async function runAudit() {
 
   const fecha = new Date().toLocaleDateString('es-ES', { day:'2-digit', month:'2-digit', year:'numeric' });
   const hora  = new Date().toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit' });
+
   const userMsg = `Audita la siguiente cuenta de Google Ads:
 
 DATOS DEL CLIENTE:
@@ -1347,7 +1565,7 @@ DATOS DEL CLIENTE:
 IMPORTANTE — aplica los umbrales correspondientes al tamaño de cuenta: ${tamanoLabel}
 
 DATOS EXPORTADOS DE GOOGLE ADS:
-${datosFiltrados}
+${bloquesDatos}
 
 Fecha y hora del análisis: ${fecha} ${hora}
 
@@ -1682,8 +1900,9 @@ function copyReport() {
    NUEVA AUDITORÍA — RESET COMPLETO
 ================================================ */
 function newAudit() {
-  ['f-cliente','f-ciudad','f-gasto','f-cpa','f-datos'].forEach(id => {
-    document.getElementById(id).value = '';
+  ['f-cliente','f-ciudad','f-gasto','f-cpa','f-datos','f-datos2','f-datos3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
   });
   document.getElementById('f-sector').value   = '';
   document.getElementById('f-objetivo').value = '';
@@ -1691,10 +1910,20 @@ function newAudit() {
   document.querySelectorAll('.cb-row input').forEach(cb => { cb.checked = false; });
 
   switchTab('file');
-  window._fileData = null;
-  document.getElementById('file-info').textContent = '';
-  const fileInput = document.getElementById('f-file');
-  if (fileInput) fileInput.value = '';
+  switchTab2('file');
+  switchTab3('file');
+  window._fileData1 = null;
+  window._fileData2 = null;
+  window._fileData3 = null;
+  ['file-info','file-info2','file-info3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = '';
+  });
+  ['f-file','f-file2','f-file3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('csv-sources-summary').style.display = 'none';
 
   document.getElementById('results').innerHTML = '';
   window._auditData = null;
