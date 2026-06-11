@@ -995,6 +995,7 @@ textarea.inp {
     <button class="btn-run" id="btn-run" onclick="runAudit()">
       <span id="btn-label">EJECUTAR AUDITORÍA</span>
     </button>
+    <div id="audit-row-info" style="font-size:10px;color:var(--t2);letter-spacing:1px;text-align:center;margin-top:7px;min-height:15px;"></div>
 
   </div><!-- /pnl-l -->
 
@@ -1138,6 +1139,8 @@ function resetBtn() {
   const b = document.getElementById('btn-run');
   b.disabled = false;
   b.innerHTML = '<span id="btn-label">EJECUTAR AUDITORÍA</span>';
+  const infoEl = document.getElementById('audit-row-info');
+  if (infoEl) infoEl.textContent = '';
 }
 
 /* ================================================
@@ -1627,11 +1630,17 @@ RESPONDE ÚNICAMENTE EN ESTE FORMATO JSON EXACTO (sin texto adicional):
 
 /* ================================================
    PREPROCESADO CSV
+   Devuelve { csv, total, resultado, modo }
 ================================================ */
 function filtrarCSV(raw) {
-  const allLines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  if (allLines.length < 20) return raw;
+  const norm = s => s.toLowerCase().replace(/"/g,'').normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
 
+  const allLines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const totalBruto = Math.max(0, allLines.length - 1);
+
+  if (allLines.length < 20) return { csv: raw, total: totalBruto, resultado: totalBruto, modo: 'sin filtro' };
+
+  // Detectar cabecera real (línea con coste + clics)
   let headerIdx = -1;
   for (let i = 0; i < Math.min(10, allLines.length); i++) {
     const lower = allLines[i].toLowerCase();
@@ -1641,32 +1650,81 @@ function filtrarCSV(raw) {
       break;
     }
   }
-  if (headerIdx === -1) return raw;
+
+  // Sin cabecera reconocida → fallback 3000 filas
+  if (headerIdx === -1) {
+    const limited = allLines.slice(0, 3001).join('\n');
+    return { csv: limited, total: totalBruto, resultado: Math.min(totalBruto, 3000), modo: 'fallback 3000 filas' };
+  }
 
   const lines = allLines.slice(headerIdx);
-  if (lines.length < 20) return raw;
+  if (lines.length < 20) return { csv: raw, total: totalBruto, resultado: totalBruto, modo: 'sin filtro' };
 
-  const cols = lines[0].split(',').map(c => c.trim().toLowerCase()
-    .replace(/"/g,'')
-    .normalize('NFD').replace(/[̀-ͯ]/g,''));
+  const cols = lines[0].split(',').map(norm);
 
+  // ── Filtro de fechas ──────────────────────────────────────
+  // Columnas aceptadas: Día / Day / Date / Fecha / dia / date
+  const NOMBRES_FECHA = ['dia', 'day', 'date', 'fecha'];
+  const iFecha = cols.findIndex(c => NOMBRES_FECHA.includes(c));
+
+  let workingLines = lines.slice(1);
+  let modoFiltro = 'sin columna de fecha';
+
+  if (iFecha !== -1) {
+    const parseDate = s => {
+      if (!s) return null;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(s);
+      const m = s.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
+      if (m) return new Date(`${m[3]}-${m[2]}-${m[1]}`);
+      return null;
+    };
+
+    const conFecha = workingLines.map(line => {
+      const parts = line.split(',').map(p => p.trim().replace(/"/g,''));
+      return { line, date: parseDate(parts[iFecha]) };
+    });
+
+    const validas = conFecha.filter(r => r.date && !isNaN(r.date));
+
+    if (validas.length >= 5) {
+      const maxTs  = Math.max(...validas.map(r => r.date.getTime()));
+      const maxDate = new Date(maxTs);
+      const cutoff  = new Date(maxTs - 14 * 864e5); // 14 días en ms
+
+      const filtradas = conFecha.filter(r => r.date && r.date >= cutoff).map(r => r.line);
+
+      if (filtradas.length >= 5) {
+        workingLines = filtradas;
+        modoFiltro = `últimos 14 días (hasta ${maxDate.toLocaleDateString('es-ES')})`;
+      } else {
+        modoFiltro = 'CSV de resumen (sin desglose diario)';
+      }
+    } else {
+      modoFiltro = 'fechas no reconocidas';
+    }
+  }
+
+  // ── Filtro por coste/conversiones ─────────────────────────
   const iCoste = cols.findIndex(c => c === 'coste' || c === 'cost');
   const iConv  = cols.findIndex(c => c === 'conversiones' || c === 'conversions');
+  const totalTras = workingLines.length;
 
-  if (iCoste === -1 || iConv === -1) return raw;
+  if (iCoste === -1 || iConv === -1) {
+    const limited = [lines[0], ...workingLines.slice(0, 3000)].join('\n');
+    return { csv: limited, total: totalBruto, resultado: Math.min(totalTras, 3000), modo: modoFiltro };
+  }
 
-  const totalFilas = lines.length - 1;
   let gastoTotal = 0;
   const conGasto = [];
   const conConv  = [];
 
-  for (let i = 1; i < lines.length; i++) {
-    const parts = lines[i].split(',').map(p => p.trim().replace(/"/g,'').replace(',','.'));
+  for (const line of workingLines) {
+    const parts = line.split(',').map(p => p.trim().replace(/"/g,'').replace(',','.'));
     const coste = parseFloat(parts[iCoste]) || 0;
     const conv  = parseFloat(parts[iConv])  || 0;
     gastoTotal += coste;
-    if (conv > 0) conConv.push({ line: lines[i], coste, conv });
-    else if (coste > 0) conGasto.push({ line: lines[i], coste });
+    if (conv > 0) conConv.push({ line, coste, conv });
+    else if (coste > 0) conGasto.push({ line, coste });
   }
 
   conGasto.sort((a, b) => b.coste - a.coste);
@@ -1674,13 +1732,15 @@ function filtrarCSV(raw) {
 
   const selConv  = conConv.slice(0, 20);
   const selGasto = conGasto.slice(0, 150 - selConv.length);
-  const sel = [...selConv, ...selGasto].sort((a,b) => b.coste - a.coste);
+  const sel      = [...selConv, ...selGasto].sort((a, b) => b.coste - a.coste);
 
-  return [
-    `[PREPROCESADO: ${totalFilas} filas originales | Gasto total: ${gastoTotal.toFixed(2)}€ | Mostrando ${sel.length} filas filtradas por coste]`,
+  const csv = [
+    `[PREPROCESADO: ${totalBruto} filas originales | Filtro: ${modoFiltro} | Gasto total: ${gastoTotal.toFixed(2)}€ | Mostrando ${sel.length} filas]`,
     lines[0],
     ...sel.map(r => r.line)
   ].join('\n');
+
+  return { csv, total: totalBruto, resultado: sel.length, modo: modoFiltro };
 }
 
 /* ================================================
@@ -1723,9 +1783,23 @@ async function runAudit() {
   }
 
   // Filtrar y construir bloque de datos
-  const d1Filtrado = filtrarCSV(datos1);
-  const d2Filtrado = datos2 ? filtrarCSV(datos2) : '';
-  const d3Filtrado = datos3 ? filtrarCSV(datos3) : '';
+  const r1 = filtrarCSV(datos1);
+  const r2 = datos2 ? filtrarCSV(datos2) : null;
+  const r3 = datos3 ? filtrarCSV(datos3) : null;
+
+  const d1Filtrado = r1.csv;
+  const d2Filtrado = r2 ? r2.csv : '';
+  const d3Filtrado = r3 ? r3.csv : '';
+
+  // Mostrar cuántas filas se procesan vs totales
+  const infoEl = document.getElementById('audit-row-info');
+  if (infoEl) {
+    const totalTotal  = r1.total + (r2?.total || 0) + (r3?.total || 0);
+    const totalResult = r1.resultado + (r2?.resultado || 0) + (r3?.resultado || 0);
+    infoEl.textContent = totalTotal > totalResult
+      ? `Procesando ${totalResult.toLocaleString('es-ES')} filas de ${totalTotal.toLocaleString('es-ES')} totales`
+      : '';
+  }
 
   const fuentesCount = [datos1, datos2, datos3].filter(d => d).length;
 
