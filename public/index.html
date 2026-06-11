@@ -677,6 +677,7 @@ textarea.inp {
 /* =============================================
    PRINT / PDF
 ============================================= */
+.print-only { display: none; }
 @media print {
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body { background: #fff !important; color: #111 !important; font-size: 11px; }
@@ -735,6 +736,7 @@ textarea.inp {
   .card:last-child { break-inside: avoid; page-break-inside: avoid; }
   .results { display: block !important; }
   .results > .card { break-inside: avoid; page-break-inside: avoid; margin-bottom: 16px; }
+  .print-only { display: block; font-size: 9px; color: #333; white-space: pre-wrap; word-break: break-all; border: 1px solid #ddd; padding: 8px; margin-top: 6px; }
 }
 
 /* =============================================
@@ -777,6 +779,25 @@ textarea.inp {
        PANEL IZQUIERDO
   ======================== -->
   <div class="pnl-l">
+
+    <!-- Sección 0: Importar desde Google Ads MCP -->
+    <div class="form-sec">
+      <div class="sec-title">00 — IMPORTAR DESDE GOOGLE ADS</div>
+
+      <div class="fg">
+        <label class="lbl" for="mcp-customer-id">Customer ID</label>
+        <input id="mcp-customer-id" type="text" class="inp" placeholder="Ej: 123-456-7890">
+      </div>
+
+      <button
+        id="btn-mcp-import"
+        class="btn-run"
+        style="background:#333;color:#f5f5f5;margin-top:0;"
+        onclick="mcpImportData()"
+      >IMPORTAR DATOS</button>
+
+      <div id="mcp-import-status" style="margin-top:8px;"></div>
+    </div>
 
     <!-- Sección 1: Datos de la cuenta -->
     <div class="form-sec">
@@ -849,6 +870,35 @@ textarea.inp {
     <!-- Sección 2: Datos exportados (tabs: archivo / pegar) -->
     <div class="form-sec">
       <div class="sec-title">02 — DATOS EXPORTADOS DE GOOGLE ADS</div>
+
+      <!-- Selector de origen: CSV manual / Google Ads automático -->
+      <div class="tab-sw" id="source-sw">
+        <button class="tab-btn active" id="src-manual" onclick="switchSource('manual')">📁 CSV manual</button>
+        <button class="tab-btn" id="src-gads" onclick="switchSource('gads')">☁️ Google Ads (automático)</button>
+      </div>
+
+      <!-- Modo Google Ads -->
+      <div id="modo-gads" style="display:none;">
+        <label class="lbl" for="gads-account">Cuenta de Google Ads</label>
+        <select id="gads-account" class="inp" style="margin-bottom:10px;">
+          <option value="">Cargando cuentas…</option>
+        </select>
+
+        <label class="lbl" for="gads-range">Rango de fechas</label>
+        <select id="gads-range" class="inp" style="margin-bottom:10px;">
+          <option value="LAST_30_DAYS" selected>Últimos 30 días</option>
+          <option value="LAST_7_DAYS">Últimos 7 días</option>
+          <option value="LAST_90_DAYS">Últimos 90 días</option>
+        </select>
+
+        <button class="btn-demo" id="gads-load-btn" style="width:100%;justify-content:center;padding:10px 12px;" onclick="gadsFetchData()">
+          ☁️ CARGAR DATOS DE GOOGLE ADS
+        </button>
+        <div id="gads-status" class="file-info"></div>
+      </div>
+
+      <!-- Modo manual (todo lo de siempre) -->
+      <div id="modo-manual">
 
       <!-- Tab switcher CSV 1 -->
       <div class="tab-sw">
@@ -938,6 +988,8 @@ textarea.inp {
         Campañas → Descargar → CSV con todas las columnas<br>
         Keywords → Palabras clave → Descargar → CSV
       </div>
+
+      </div><!-- /modo-manual -->
     </div>
 
     <button class="btn-run" id="btn-run" onclick="runAudit()">
@@ -983,6 +1035,52 @@ textarea.inp {
 </footer>
 
 <script>
+/* ================================================
+   MCP GOOGLE ADS — IMPORTACIÓN DIRECTA
+================================================ */
+
+async function mcpImportData() {
+  const customerId = (document.getElementById('mcp-customer-id').value || '').trim();
+  const statusEl   = document.getElementById('mcp-import-status');
+  const btn        = document.getElementById('btn-mcp-import');
+
+  if (!customerId) {
+    statusEl.innerHTML = '<div style="color:var(--fail);font-size:12px;margin-top:4px;">Introduce un Customer ID antes de importar.</div>';
+    return;
+  }
+
+  btn.disabled = true;
+  statusEl.innerHTML = '<div style="color:var(--t2);font-size:12px;margin-top:4px;">Importando datos…</div>';
+
+  try {
+    const res = await fetch('https://mcp-google-ads-production-7e35.up.railway.app/api/google-ads-data', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': window.MCP_API_KEY || ''
+      },
+      body: JSON.stringify({ customer_id: customerId, date_range: 'LAST_14_DAYS' })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      const msg = err?.detail || err?.error?.message || `HTTP ${res.status}`;
+      throw new Error(msg);
+    }
+
+    const data = await res.json();
+    if (data.csv1) window._fileData1 = data.csv1;
+    if (data.csv2) window._fileData2 = data.csv2;
+    if (data.csv3) window._fileData3 = data.csv3;
+
+    statusEl.innerHTML = '<div style="display:inline-block;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);color:#22c55e;font-size:11px;padding:6px 10px;letter-spacing:1px;margin-top:4px;">✓ 3 fuentes importadas desde Google Ads API</div>';
+  } catch (err) {
+    statusEl.innerHTML = `<div style="color:var(--fail);font-size:12px;margin-top:4px;">Error al importar: ${err.message}</div>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 /* ================================================
    UTILIDADES
 ================================================ */
@@ -1124,6 +1222,107 @@ function updateCsvSummary() {
     label.textContent = `${count} fuentes de datos cargadas — análisis cruzado`;
   } else {
     badge.style.display = 'none';
+  }
+}
+
+/* ================================================
+   GOOGLE ADS — CARGA AUTOMÁTICA VÍA SERVIDOR
+================================================ */
+let _gadsAccountsLoaded = false;
+
+function switchSource(mode) {
+  document.getElementById('src-manual').classList.toggle('active', mode === 'manual');
+  document.getElementById('src-gads').classList.toggle('active', mode === 'gads');
+  document.getElementById('modo-manual').style.display = mode === 'manual' ? '' : 'none';
+  document.getElementById('modo-gads').style.display = mode === 'gads' ? '' : 'none';
+  if (mode === 'gads' && !_gadsAccountsLoaded) gadsLoadAccounts();
+}
+
+function gadsStatus(msg, isError) {
+  const el = document.getElementById('gads-status');
+  el.innerHTML = msg;
+  el.style.color = isError ? 'var(--fail)' : 'var(--pass)';
+}
+
+async function gadsLoadAccounts() {
+  const sel = document.getElementById('gads-account');
+  sel.innerHTML = '<option value="">Cargando cuentas…</option>';
+  gadsStatus('', false);
+  try {
+    const res = await fetch('/api/google-ads/accounts');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error?.message || `Error ${res.status}`);
+
+    const cuentas = data.accounts || [];
+    if (!cuentas.length) throw new Error('No se encontraron cuentas hijas en el MCC.');
+
+    sel.innerHTML = '<option value="">— Selecciona una cuenta —</option>' +
+      cuentas.map(c => `<option value="${esc(c.id)}">${esc(c.nombre)}${c.moneda ? ' (' + esc(c.moneda) + ')' : ''}</option>`).join('');
+    _gadsAccountsLoaded = true;
+  } catch (err) {
+    sel.innerHTML = '<option value="">⚠ No se pudieron cargar las cuentas</option>';
+    gadsStatus('✗ ' + esc(err.message) + '<br>Puedes <a href="#" style="color:var(--gold)" onclick="gadsLoadAccounts();return false;">reintentar</a> o usar el modo CSV manual.', true);
+  }
+}
+
+async function gadsFetchData() {
+  const accountSel = document.getElementById('gads-account');
+  const customerId = accountSel.value;
+  const accountName = accountSel.options[accountSel.selectedIndex]?.text || '';
+  const range = document.getElementById('gads-range').value;
+  const rangeLabel = { LAST_7_DAYS: '7 días', LAST_30_DAYS: '30 días', LAST_90_DAYS: '90 días' }[range] || range;
+
+  if (!customerId) { gadsStatus('✗ Selecciona primero una cuenta de Google Ads.', true); return; }
+
+  const btn = document.getElementById('gads-load-btn');
+  btn.disabled = true;
+  btn.textContent = 'Descargando datos de Google Ads…';
+  gadsStatus('Conectando con Google Ads… puede tardar unos segundos.', false);
+
+  try {
+    const res = await fetch('/api/google-ads/data', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ customer_id: customerId, date_range: range })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error?.message || `Error ${res.status}`);
+
+    // Filas de datos (sin contar la cabecera) de cada CSV
+    const rows = csv => Math.max(0, (csv || '').split('\n').filter(l => l.trim()).length - 1);
+    const n1 = rows(data.csv1), n2 = rows(data.csv2), n3 = rows(data.csv3);
+
+    if (n1 + n2 + n3 === 0) {
+      throw new Error('Esta cuenta no tiene datos en ese rango de fechas. Prueba un rango mayor o usa el CSV manual.');
+    }
+
+    // Inyectar los CSVs en el mismo flujo que la subida manual.
+    // Solo los que traen datos, en orden, para que el CSV 1 (obligatorio)
+    // siempre quede ocupado: términos de búsqueda → campañas → keywords
+    const conDatos = [
+      { csv: data.csv1, filas: n1, lbl: 'Términos de búsqueda' },
+      { csv: data.csv2, filas: n2, lbl: 'Campañas' },
+      { csv: data.csv3, filas: n3, lbl: 'Keywords' }
+    ].filter(s => s.filas > 0);
+
+    switchTab('file'); switchTab2('file'); switchTab3('file');
+    for (let n = 1; n <= 3; n++) {
+      const s = conDatos[n - 1];
+      window[`_fileData${n}`] = s ? s.csv : null;
+      const info = document.getElementById(n === 1 ? 'file-info' : `file-info${n}`);
+      info.style.color = '';
+      info.textContent = s ? `✓ Google Ads — ${s.lbl} (${rangeLabel}) — ${s.filas} filas` : '';
+    }
+    updateCsvSummary();
+
+    let msg = `✓ Datos cargados de <strong>${esc(accountName)}</strong> (${rangeLabel}). Ya puedes ejecutar la auditoría.`;
+    if (n1 === 0) msg += '<br>⚠ Sin términos de búsqueda en este rango — la auditoría usará campañas y keywords.';
+    gadsStatus(msg, false);
+  } catch (err) {
+    gadsStatus('✗ ' + esc(err.message) + '<br>Como alternativa, puedes usar el modo CSV manual.', true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '☁️ CARGAR DATOS DE GOOGLE ADS';
   }
 }
 
@@ -1792,8 +1991,8 @@ function renderResults(d) {
   /* --- ACCIONES RÁPIDAS --- */
   const acciones = [];
   const cbChecked = [...document.querySelectorAll('.cb-row input:checked')].map(c => c.value);
-  if (cbChecked.includes('Search'))     acciones.push({ label: 'SCRIPT NEGATIVOS SEARCH', file: '/downloads/script-negativos-search.js' });
-  if (cbChecked.includes('PMax'))       acciones.push({ label: 'SCRIPT NEGATIVOS PMAX',   file: '/downloads/script-negativos-pmax.js' });
+  if (cbChecked.includes('Search'))     acciones.push({ label: 'SCRIPT NEGATIVOS SEARCH', file: '/downloads/script-negativos-search.js', content: SCRIPT_SEARCH_CONTENT });
+  if (cbChecked.includes('PMax'))       acciones.push({ label: 'SCRIPT NEGATIVOS PMAX',   file: '/downloads/script-negativos-pmax.js', content: SCRIPT_PMAX_CONTENT });
   if (cbChecked.includes('Demand Gen')) acciones.push({ label: 'CSV DEMAND GEN',           file: '/downloads/csv-demand-gen.csv' });
   if (cbChecked.includes('Video'))      acciones.push({ label: 'CSV YOUTUBE',               file: '/downloads/csv-youtube.csv' });
 
@@ -1801,6 +2000,7 @@ function renderResults(d) {
     h += `<div class="card"><div class="card-title">ACCIONES RÁPIDAS</div><div class="aq-grid">`;
     acciones.forEach(a => {
       h += `<a class="btn-aq" href="${a.file}" download>${a.label}</a>`;
+      if (a.content) h += `<pre class="print-only">${a.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>`;
     });
     h += `</div></div>`;
   }
@@ -1930,6 +2130,12 @@ function newAudit() {
   showState('st-empty');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+/* ---- PRELOAD SCRIPT CONTENT FOR PDF ---- */
+let SCRIPT_SEARCH_CONTENT = '';
+let SCRIPT_PMAX_CONTENT   = '';
+fetch('/downloads/script-negativos-search.js').then(r => r.text()).then(t => { SCRIPT_SEARCH_CONTENT = t; }).catch(() => {});
+fetch('/downloads/script-negativos-pmax.js').then(r => r.text()).then(t => { SCRIPT_PMAX_CONTENT   = t; }).catch(() => {});
 </script>
 </body>
 </html>

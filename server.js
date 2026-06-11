@@ -1,5 +1,6 @@
 const express = require('express');
 const path    = require('path');
+const fs      = require('fs');
 const session = require('express-session');
 require('dotenv').config();
 
@@ -114,7 +115,19 @@ app.post('/auth', (req, res) => {
 
 /* ------------------------------------------------
    ARCHIVOS ESTÁTICOS (protegidos)
+   index.html se sirve con MCP_API_KEY inyectada
 ------------------------------------------------ */
+app.get('/', requireAuth, (req, res) => {
+  const htmlPath = path.join(__dirname, 'public', 'index.html');
+  const html = fs.readFileSync(htmlPath, 'utf8');
+  const apiKey = process.env.MCP_API_KEY || '';
+  const injected = html.replace(
+    '</head>',
+    `<script>window.MCP_API_KEY = ${JSON.stringify(apiKey)};</script>\n</head>`
+  );
+  res.send(injected);
+});
+
 app.use(requireAuth, express.static(path.join(__dirname, 'public')));
 
 /* ------------------------------------------------
@@ -142,6 +155,93 @@ app.post('/api/audit', requireAuth, async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: { message: err.message } });
   }
+});
+
+/* ------------------------------------------------
+   GOOGLE ADS (proxy al MCP — la API key nunca
+   sale del servidor)
+------------------------------------------------ */
+const MCC_EXCLUIDA = '8706409693'; // cuenta manager: el endpoint de datos no funciona con MCCs
+const RANGOS_VALIDOS = ['LAST_7_DAYS', 'LAST_30_DAYS', 'LAST_90_DAYS'];
+
+function getMcpConfig() {
+  const url = process.env.MCP_URL;
+  const apiKey = process.env.MCP_API_KEY;
+  if (!url || !apiKey) {
+    return { error: 'MCP_URL / MCP_API_KEY no configuradas en el servidor. Añádelas en las variables de Railway del motor.' };
+  }
+  return { url: url.replace(/\/+$/, ''), apiKey };
+}
+
+async function fetchMcp(pathName, options = {}) {
+  const cfg = getMcpConfig();
+  if (cfg.error) return { status: 500, body: { error: { message: cfg.error } } };
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 60000);
+  try {
+    const upstream = await fetch(cfg.url + pathName, {
+      ...options,
+      headers: {
+        'X-API-Key': cfg.apiKey,
+        'content-type': 'application/json',
+        ...(options.headers || {})
+      },
+      signal: controller.signal
+    });
+    const data = await upstream.json().catch(() => null);
+    if (!upstream.ok) {
+      const detail = data?.detail;
+      const detailMsg = typeof detail === 'string'
+        ? detail
+        : (detail?.google_ads_errors || []).join(' | ');
+      return {
+        status: 502,
+        body: { error: { message: `El conector de Google Ads devolvió un error${detailMsg ? ': ' + detailMsg : ` (HTTP ${upstream.status})`}. Puedes usar la subida manual de CSV mientras tanto.` } }
+      };
+    }
+    return { status: 200, body: data };
+  } catch (err) {
+    const motivo = err.name === 'AbortError' ? 'tarda demasiado en responder' : 'no responde';
+    return {
+      status: 502,
+      body: { error: { message: `El conector de Google Ads ${motivo}. Puedes usar la subida manual de CSV mientras tanto.` } }
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+app.get('/api/google-ads/accounts', requireAuth, async (req, res) => {
+  const result = await fetchMcp('/api/accounts');
+  if (result.status !== 200) return res.status(result.status).json(result.body);
+
+  const cuentas = (result.body.accounts || [])
+    .filter(a => !a.es_manager && String(a.id) !== MCC_EXCLUIDA)
+    .map(a => ({ id: String(a.id), nombre: a.nombre || `Cuenta ${a.id}`, moneda: a.moneda || '' }));
+
+  res.json({ accounts: cuentas });
+});
+
+app.post('/api/google-ads/data', requireAuth, async (req, res) => {
+  const customerId = String(req.body?.customer_id || '').replace(/-/g, '');
+  const dateRange = req.body?.date_range || 'LAST_30_DAYS';
+
+  if (!customerId) {
+    return res.status(400).json({ error: { message: 'Selecciona una cuenta de Google Ads.' } });
+  }
+  if (customerId === MCC_EXCLUIDA) {
+    return res.status(400).json({ error: { message: 'Esa cuenta es la cuenta manager (MCC) y no se puede auditar directamente. Selecciona una cuenta hija.' } });
+  }
+  if (!RANGOS_VALIDOS.includes(dateRange)) {
+    return res.status(400).json({ error: { message: 'Rango de fechas no válido.' } });
+  }
+
+  const result = await fetchMcp('/api/google-ads-data', {
+    method: 'POST',
+    body: JSON.stringify({ customer_id: customerId, date_range: dateRange })
+  });
+  res.status(result.status).json(result.body);
 });
 
 const PORT = process.env.PORT || 3000;
