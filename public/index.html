@@ -850,6 +850,35 @@ textarea.inp {
     <div class="form-sec">
       <div class="sec-title">02 — DATOS EXPORTADOS DE GOOGLE ADS</div>
 
+      <!-- Selector de origen: CSV manual / Google Ads automático -->
+      <div class="tab-sw" id="source-sw">
+        <button class="tab-btn active" id="src-manual" onclick="switchSource('manual')">📁 CSV manual</button>
+        <button class="tab-btn" id="src-gads" onclick="switchSource('gads')">☁️ Google Ads (automático)</button>
+      </div>
+
+      <!-- Modo Google Ads -->
+      <div id="modo-gads" style="display:none;">
+        <label class="lbl" for="gads-account">Cuenta de Google Ads</label>
+        <select id="gads-account" class="inp" style="margin-bottom:10px;">
+          <option value="">Cargando cuentas…</option>
+        </select>
+
+        <label class="lbl" for="gads-range">Rango de fechas</label>
+        <select id="gads-range" class="inp" style="margin-bottom:10px;">
+          <option value="LAST_30_DAYS" selected>Últimos 30 días</option>
+          <option value="LAST_7_DAYS">Últimos 7 días</option>
+          <option value="LAST_90_DAYS">Últimos 90 días</option>
+        </select>
+
+        <button class="btn-demo" id="gads-load-btn" style="width:100%;justify-content:center;padding:10px 12px;" onclick="gadsFetchData()">
+          ☁️ CARGAR DATOS DE GOOGLE ADS
+        </button>
+        <div id="gads-status" class="file-info"></div>
+      </div>
+
+      <!-- Modo manual (todo lo de siempre) -->
+      <div id="modo-manual">
+
       <!-- Tab switcher CSV 1 -->
       <div class="tab-sw">
         <button class="tab-btn active" id="tab-file" onclick="switchTab('file')">📎 Subir archivo</button>
@@ -938,6 +967,8 @@ textarea.inp {
         Campañas → Descargar → CSV con todas las columnas<br>
         Keywords → Palabras clave → Descargar → CSV
       </div>
+
+      </div><!-- /modo-manual -->
     </div>
 
     <button class="btn-run" id="btn-run" onclick="runAudit()">
@@ -1124,6 +1155,107 @@ function updateCsvSummary() {
     label.textContent = `${count} fuentes de datos cargadas — análisis cruzado`;
   } else {
     badge.style.display = 'none';
+  }
+}
+
+/* ================================================
+   GOOGLE ADS — CARGA AUTOMÁTICA VÍA SERVIDOR
+================================================ */
+let _gadsAccountsLoaded = false;
+
+function switchSource(mode) {
+  document.getElementById('src-manual').classList.toggle('active', mode === 'manual');
+  document.getElementById('src-gads').classList.toggle('active', mode === 'gads');
+  document.getElementById('modo-manual').style.display = mode === 'manual' ? '' : 'none';
+  document.getElementById('modo-gads').style.display = mode === 'gads' ? '' : 'none';
+  if (mode === 'gads' && !_gadsAccountsLoaded) gadsLoadAccounts();
+}
+
+function gadsStatus(msg, isError) {
+  const el = document.getElementById('gads-status');
+  el.innerHTML = msg;
+  el.style.color = isError ? 'var(--fail)' : 'var(--pass)';
+}
+
+async function gadsLoadAccounts() {
+  const sel = document.getElementById('gads-account');
+  sel.innerHTML = '<option value="">Cargando cuentas…</option>';
+  gadsStatus('', false);
+  try {
+    const res = await fetch('/api/google-ads/accounts');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error?.message || `Error ${res.status}`);
+
+    const cuentas = data.accounts || [];
+    if (!cuentas.length) throw new Error('No se encontraron cuentas hijas en el MCC.');
+
+    sel.innerHTML = '<option value="">— Selecciona una cuenta —</option>' +
+      cuentas.map(c => `<option value="${esc(c.id)}">${esc(c.nombre)}${c.moneda ? ' (' + esc(c.moneda) + ')' : ''}</option>`).join('');
+    _gadsAccountsLoaded = true;
+  } catch (err) {
+    sel.innerHTML = '<option value="">⚠ No se pudieron cargar las cuentas</option>';
+    gadsStatus('✗ ' + esc(err.message) + '<br>Puedes <a href="#" style="color:var(--gold)" onclick="gadsLoadAccounts();return false;">reintentar</a> o usar el modo CSV manual.', true);
+  }
+}
+
+async function gadsFetchData() {
+  const accountSel = document.getElementById('gads-account');
+  const customerId = accountSel.value;
+  const accountName = accountSel.options[accountSel.selectedIndex]?.text || '';
+  const range = document.getElementById('gads-range').value;
+  const rangeLabel = { LAST_7_DAYS: '7 días', LAST_30_DAYS: '30 días', LAST_90_DAYS: '90 días' }[range] || range;
+
+  if (!customerId) { gadsStatus('✗ Selecciona primero una cuenta de Google Ads.', true); return; }
+
+  const btn = document.getElementById('gads-load-btn');
+  btn.disabled = true;
+  btn.textContent = 'Descargando datos de Google Ads…';
+  gadsStatus('Conectando con Google Ads… puede tardar unos segundos.', false);
+
+  try {
+    const res = await fetch('/api/google-ads/data', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ customer_id: customerId, date_range: range })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error?.message || `Error ${res.status}`);
+
+    // Filas de datos (sin contar la cabecera) de cada CSV
+    const rows = csv => Math.max(0, (csv || '').split('\n').filter(l => l.trim()).length - 1);
+    const n1 = rows(data.csv1), n2 = rows(data.csv2), n3 = rows(data.csv3);
+
+    if (n1 + n2 + n3 === 0) {
+      throw new Error('Esta cuenta no tiene datos en ese rango de fechas. Prueba un rango mayor o usa el CSV manual.');
+    }
+
+    // Inyectar los CSVs en el mismo flujo que la subida manual.
+    // Solo los que traen datos, en orden, para que el CSV 1 (obligatorio)
+    // siempre quede ocupado: términos de búsqueda → campañas → keywords
+    const conDatos = [
+      { csv: data.csv1, filas: n1, lbl: 'Términos de búsqueda' },
+      { csv: data.csv2, filas: n2, lbl: 'Campañas' },
+      { csv: data.csv3, filas: n3, lbl: 'Keywords' }
+    ].filter(s => s.filas > 0);
+
+    switchTab('file'); switchTab2('file'); switchTab3('file');
+    for (let n = 1; n <= 3; n++) {
+      const s = conDatos[n - 1];
+      window[`_fileData${n}`] = s ? s.csv : null;
+      const info = document.getElementById(n === 1 ? 'file-info' : `file-info${n}`);
+      info.style.color = '';
+      info.textContent = s ? `✓ Google Ads — ${s.lbl} (${rangeLabel}) — ${s.filas} filas` : '';
+    }
+    updateCsvSummary();
+
+    let msg = `✓ Datos cargados de <strong>${esc(accountName)}</strong> (${rangeLabel}). Ya puedes ejecutar la auditoría.`;
+    if (n1 === 0) msg += '<br>⚠ Sin términos de búsqueda en este rango — la auditoría usará campañas y keywords.';
+    gadsStatus(msg, false);
+  } catch (err) {
+    gadsStatus('✗ ' + esc(err.message) + '<br>Como alternativa, puedes usar el modo CSV manual.', true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '☁️ CARGAR DATOS DE GOOGLE ADS';
   }
 }
 
