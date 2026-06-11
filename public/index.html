@@ -1053,12 +1053,9 @@ async function mcpImportData() {
   statusEl.innerHTML = '<div style="color:var(--t2);font-size:12px;margin-top:4px;">Importando datos…</div>';
 
   try {
-    const res = await fetch('https://mcp-google-ads-production-7e35.up.railway.app/api/google-ads-data', {
+    const res = await fetch('/api/mcp-import', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': window.MCP_API_KEY || ''
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ customer_id: customerId, date_range: 'LAST_14_DAYS' })
     });
 
