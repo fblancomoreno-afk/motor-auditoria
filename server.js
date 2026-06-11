@@ -251,6 +251,7 @@ app.post('/api/google-ads/data', requireAuth, async (req, res) => {
 const MCP_IMPORT_URL = 'https://mcp-google-ads-production-7e35.up.railway.app/api/google-ads-data';
 
 app.post('/api/mcp-import', requireAuth, async (req, res) => {
+  console.log('[mcp-import] MCP_API_KEY:', process.env.MCP_API_KEY ? 'definida' : 'undefined');
   const apiKey = process.env.MCP_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: { message: 'MCP_API_KEY no configurada en el servidor.' } });
