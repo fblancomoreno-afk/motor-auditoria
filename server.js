@@ -1,5 +1,6 @@
 const express = require('express');
 const path    = require('path');
+const fs      = require('fs');
 const session = require('express-session');
 require('dotenv').config();
 
@@ -114,7 +115,19 @@ app.post('/auth', (req, res) => {
 
 /* ------------------------------------------------
    ARCHIVOS ESTÁTICOS (protegidos)
+   index.html se sirve con MCP_API_KEY inyectada
 ------------------------------------------------ */
+app.get('/', requireAuth, (req, res) => {
+  const htmlPath = path.join(__dirname, 'public', 'index.html');
+  const html = fs.readFileSync(htmlPath, 'utf8');
+  const apiKey = process.env.MCP_API_KEY || '';
+  const injected = html.replace(
+    '</head>',
+    `<script>window.MCP_API_KEY = ${JSON.stringify(apiKey)};</script>\n</head>`
+  );
+  res.send(injected);
+});
+
 app.use(requireAuth, express.static(path.join(__dirname, 'public')));
 
 /* ------------------------------------------------

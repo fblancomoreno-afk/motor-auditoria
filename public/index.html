@@ -677,6 +677,7 @@ textarea.inp {
 /* =============================================
    PRINT / PDF
 ============================================= */
+.print-only { display: none; }
 @media print {
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body { background: #fff !important; color: #111 !important; font-size: 11px; }
@@ -735,6 +736,7 @@ textarea.inp {
   .card:last-child { break-inside: avoid; page-break-inside: avoid; }
   .results { display: block !important; }
   .results > .card { break-inside: avoid; page-break-inside: avoid; margin-bottom: 16px; }
+  .print-only { display: block; font-size: 9px; color: #333; white-space: pre-wrap; word-break: break-all; border: 1px solid #ddd; padding: 8px; margin-top: 6px; }
 }
 
 /* =============================================
@@ -777,6 +779,25 @@ textarea.inp {
        PANEL IZQUIERDO
   ======================== -->
   <div class="pnl-l">
+
+    <!-- Sección 0: Importar desde Google Ads MCP -->
+    <div class="form-sec">
+      <div class="sec-title">00 — IMPORTAR DESDE GOOGLE ADS</div>
+
+      <div class="fg">
+        <label class="lbl" for="mcp-customer-id">Customer ID</label>
+        <input id="mcp-customer-id" type="text" class="inp" placeholder="Ej: 123-456-7890">
+      </div>
+
+      <button
+        id="btn-mcp-import"
+        class="btn-run"
+        style="background:#333;color:#f5f5f5;margin-top:0;"
+        onclick="mcpImportData()"
+      >IMPORTAR DATOS</button>
+
+      <div id="mcp-import-status" style="margin-top:8px;"></div>
+    </div>
 
     <!-- Sección 1: Datos de la cuenta -->
     <div class="form-sec">
@@ -1014,6 +1035,52 @@ textarea.inp {
 </footer>
 
 <script>
+/* ================================================
+   MCP GOOGLE ADS — IMPORTACIÓN DIRECTA
+================================================ */
+
+async function mcpImportData() {
+  const customerId = (document.getElementById('mcp-customer-id').value || '').trim();
+  const statusEl   = document.getElementById('mcp-import-status');
+  const btn        = document.getElementById('btn-mcp-import');
+
+  if (!customerId) {
+    statusEl.innerHTML = '<div style="color:var(--fail);font-size:12px;margin-top:4px;">Introduce un Customer ID antes de importar.</div>';
+    return;
+  }
+
+  btn.disabled = true;
+  statusEl.innerHTML = '<div style="color:var(--t2);font-size:12px;margin-top:4px;">Importando datos…</div>';
+
+  try {
+    const res = await fetch('https://mcp-google-ads-production-7e35.up.railway.app/api/google-ads-data', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': window.MCP_API_KEY || ''
+      },
+      body: JSON.stringify({ customer_id: customerId, date_range: 'LAST_14_DAYS' })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      const msg = err?.detail || err?.error?.message || `HTTP ${res.status}`;
+      throw new Error(msg);
+    }
+
+    const data = await res.json();
+    if (data.csv1) window._fileData1 = data.csv1;
+    if (data.csv2) window._fileData2 = data.csv2;
+    if (data.csv3) window._fileData3 = data.csv3;
+
+    statusEl.innerHTML = '<div style="display:inline-block;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);color:#22c55e;font-size:11px;padding:6px 10px;letter-spacing:1px;margin-top:4px;">✓ 3 fuentes importadas desde Google Ads API</div>';
+  } catch (err) {
+    statusEl.innerHTML = `<div style="color:var(--fail);font-size:12px;margin-top:4px;">Error al importar: ${err.message}</div>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 /* ================================================
    UTILIDADES
 ================================================ */
@@ -1924,8 +1991,8 @@ function renderResults(d) {
   /* --- ACCIONES RÁPIDAS --- */
   const acciones = [];
   const cbChecked = [...document.querySelectorAll('.cb-row input:checked')].map(c => c.value);
-  if (cbChecked.includes('Search'))     acciones.push({ label: 'SCRIPT NEGATIVOS SEARCH', file: '/downloads/script-negativos-search.js' });
-  if (cbChecked.includes('PMax'))       acciones.push({ label: 'SCRIPT NEGATIVOS PMAX',   file: '/downloads/script-negativos-pmax.js' });
+  if (cbChecked.includes('Search'))     acciones.push({ label: 'SCRIPT NEGATIVOS SEARCH', file: '/downloads/script-negativos-search.js', content: SCRIPT_SEARCH_CONTENT });
+  if (cbChecked.includes('PMax'))       acciones.push({ label: 'SCRIPT NEGATIVOS PMAX',   file: '/downloads/script-negativos-pmax.js', content: SCRIPT_PMAX_CONTENT });
   if (cbChecked.includes('Demand Gen')) acciones.push({ label: 'CSV DEMAND GEN',           file: '/downloads/csv-demand-gen.csv' });
   if (cbChecked.includes('Video'))      acciones.push({ label: 'CSV YOUTUBE',               file: '/downloads/csv-youtube.csv' });
 
@@ -1933,6 +2000,7 @@ function renderResults(d) {
     h += `<div class="card"><div class="card-title">ACCIONES RÁPIDAS</div><div class="aq-grid">`;
     acciones.forEach(a => {
       h += `<a class="btn-aq" href="${a.file}" download>${a.label}</a>`;
+      if (a.content) h += `<pre class="print-only">${a.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>`;
     });
     h += `</div></div>`;
   }
@@ -2062,6 +2130,12 @@ function newAudit() {
   showState('st-empty');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+/* ---- PRELOAD SCRIPT CONTENT FOR PDF ---- */
+let SCRIPT_SEARCH_CONTENT = '';
+let SCRIPT_PMAX_CONTENT   = '';
+fetch('/downloads/script-negativos-search.js').then(r => r.text()).then(t => { SCRIPT_SEARCH_CONTENT = t; }).catch(() => {});
+fetch('/downloads/script-negativos-pmax.js').then(r => r.text()).then(t => { SCRIPT_PMAX_CONTENT   = t; }).catch(() => {});
 </script>
 </body>
 </html>
