@@ -16,7 +16,7 @@ function main() {
     'FROM search_term_view ' +
     'WHERE metrics.conversions = 0 ' +
     '  AND metrics.cost_micros > ' + Math.round(CONFIG.GASTO_MINIMO_EUR * 1000000) + ' ' +
-    'DURING LAST_30_DAYS';
+    'DURING %%DATE_RANGE%%';
 
   var report = AdsApp.report(query);
   var rows   = report.rows();
@@ -38,7 +38,7 @@ function main() {
 
   Logger.log('======================================');
   Logger.log('CANDIDATOS A NEGATIVOS — SEARCH');
-  Logger.log('Período: últimos 30 días');
+  Logger.log('Período: %%DATE_LABEL%%');
   Logger.log('Umbral gasto: >' + CONFIG.GASTO_MINIMO_EUR + '€ con 0 conv.');
   Logger.log('======================================');
 
