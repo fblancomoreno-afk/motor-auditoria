@@ -2042,9 +2042,22 @@ function applyDateRange(content) {
     LAST_14_DAYS: 'últimos 14 días',
     LAST_30_DAYS: 'últimos 30 días'
   };
+  const dias = { TODAY: 1, LAST_7_DAYS: 7, LAST_14_DAYS: 14, LAST_30_DAYS: 30 };
   return content
     .replace(/%%DATE_RANGE%%/g, _mcpDateRange)
-    .replace(/%%DATE_LABEL%%/g,  labels[_mcpDateRange] || _mcpDateRange);
+    .replace(/%%DATE_LABEL%%/g,  labels[_mcpDateRange] || _mcpDateRange)
+    .replace(/(DIAS:\s+)\d+/, '$1' + (dias[_mcpDateRange] || 30));
+}
+
+function downloadScript(key, filename) {
+  const content = key === 'search' ? SCRIPT_SEARCH_CONTENT : SCRIPT_PMAX_CONTENT;
+  const resolved = applyDateRange(content);
+  const blob = new Blob([resolved], { type: 'text/javascript' });
+  const tmp = document.createElement('a');
+  tmp.href = URL.createObjectURL(blob);
+  tmp.download = filename;
+  tmp.click();
+  URL.revokeObjectURL(tmp.href);
 }
 
 function renderResults(d) {
@@ -2215,10 +2228,14 @@ function renderResults(d) {
   if (acciones.length) {
     h += `<div class="card"><div class="card-title">ACCIONES RÁPIDAS</div><div class="aq-grid">`;
     acciones.forEach(a => {
-      h += `<a class="btn-aq" href="${a.file}" download>${a.label}</a>`;
       if (a.content) {
+        const fn  = a.file.split('/').pop();
+        const key = fn.includes('search') ? 'search' : 'pmax';
+        h += `<a class="btn-aq" href="#" onclick="downloadScript('${key}','${fn}');return false;">${a.label}</a>`;
         const resolved = applyDateRange(a.content);
         h += `<pre class="print-only">${resolved.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>`;
+      } else {
+        h += `<a class="btn-aq" href="${a.file}" download>${a.label}</a>`;
       }
     });
     h += `</div></div>`;
