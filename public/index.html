@@ -669,6 +669,45 @@ textarea.inp {
 }
 
 /* =============================================
+   SEMÁFORO DE MÉTRICAS
+============================================= */
+.semaforo-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+  margin-top: 4px;
+}
+@media (max-width: 900px) { .semaforo-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 500px) { .semaforo-grid { grid-template-columns: repeat(2, 1fr); } }
+.semaforo-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 14px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+.semaforo-circle {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.sem-verde   { background: rgba(34,197,94,.18);   color: var(--pass); border: 2px solid rgba(34,197,94,.5); }
+.sem-naranja { background: rgba(245,158,11,.18);  color: var(--warn); border: 2px solid rgba(245,158,11,.5); }
+.sem-rojo    { background: rgba(239,68,68,.18);   color: var(--fail); border: 2px solid rgba(239,68,68,.5); }
+.sem-gris    { background: rgba(136,136,136,.12); color: var(--t2);   border: 2px solid rgba(136,136,136,.3); }
+.semaforo-label    { font-size: 10px; letter-spacing: 1px; color: var(--t2); text-transform: uppercase; }
+.semaforo-sin-dato { font-size: 9px; color: var(--t2); }
+
+/* =============================================
    ACCIONES RÁPIDAS
 ============================================= */
 .aq-grid { display: flex; flex-direction: column; gap: 8px; }
@@ -1758,8 +1797,18 @@ RESPONDE ÚNICAMENTE EN ESTE FORMATO JSON EXACTO (sin texto adicional):
     {"accion": "", "impacto": "", "tiempo": ""}
   ],
   "flags": [],
-  "proximosPasos": {"semana1": [], "semana2": []}
-}`;
+  "proximosPasos": {"semana1": [], "semana2": []},
+  "metricas": {
+    "cvr": 3.2,
+    "cpa": 45.0,
+    "ctr": 5.8,
+    "gastoSinConversion": 32.0,
+    "ratioNegativosKeywords": 2.1,
+    "qualityScore": 6.5,
+    "searchIS": 48.0
+  }
+}
+INSTRUCCIÓN PARA "metricas": extrae del CSV los valores reales de cuenta. Todos son números. Usa null si no hay datos suficientes para calcular ese campo. CVR/CTR/gastoSinConversion/searchIS van en % (ej: 5.2, no 0.052). CPA en € (número). qualityScore es la media ponderada por impresiones en escala 1-10. gastoSinConversion es el % del gasto total invertido en términos o keywords sin ninguna conversión registrada. ratioNegativosKeywords es el número de listas de negativos activas dividido entre el número de campañas o grupos de anuncios activos.`;
 
 /* ================================================
    PREPROCESADO CSV
@@ -2060,6 +2109,78 @@ function downloadScript(key, filename) {
   URL.revokeObjectURL(tmp.href);
 }
 
+function renderSemaforos(m) {
+  if (!m) return '';
+
+  const fmt = (v, dec, suf) =>
+    (v === null || v === undefined) ? null : (+v).toFixed(dec) + suf;
+
+  const items = [
+    {
+      label: 'CVR',
+      valor: fmt(m.cvr, 1, '%'),
+      color: m.cvr === null || m.cvr === undefined ? 'gris'
+           : m.cvr > 5    ? 'verde'
+           : m.cvr >= 2.5 ? 'naranja' : 'rojo'
+    },
+    {
+      label: 'CPA',
+      valor: m.cpa !== null && m.cpa !== undefined ? fmt(m.cpa, 0, '€') : null,
+      color: m.cpa === null || m.cpa === undefined ? 'gris'
+           : m.cpa < 50   ? 'verde'
+           : m.cpa <= 85  ? 'naranja' : 'rojo'
+    },
+    {
+      label: 'CTR',
+      valor: fmt(m.ctr, 1, '%'),
+      color: m.ctr === null || m.ctr === undefined ? 'gris'
+           : m.ctr > 7.5  ? 'verde'
+           : m.ctr >= 4   ? 'naranja' : 'rojo'
+    },
+    {
+      label: 'Gasto sin conv.',
+      valor: fmt(m.gastoSinConversion, 0, '%'),
+      color: m.gastoSinConversion === null || m.gastoSinConversion === undefined ? 'gris'
+           : m.gastoSinConversion < 25  ? 'verde'
+           : m.gastoSinConversion <= 50 ? 'naranja' : 'rojo'
+    },
+    {
+      label: 'Neg./Keywords',
+      valor: fmt(m.ratioNegativosKeywords, 1, ''),
+      color: m.ratioNegativosKeywords === null || m.ratioNegativosKeywords === undefined ? 'gris'
+           : m.ratioNegativosKeywords > 3   ? 'verde'
+           : m.ratioNegativosKeywords >= 1  ? 'naranja' : 'rojo'
+    },
+    {
+      label: 'Quality Score',
+      valor: fmt(m.qualityScore, 1, ''),
+      color: m.qualityScore === null || m.qualityScore === undefined ? 'gris'
+           : m.qualityScore > 6  ? 'verde'
+           : m.qualityScore >= 4 ? 'naranja' : 'rojo'
+    },
+    {
+      label: 'Search IS',
+      valor: fmt(m.searchIS, 0, '%'),
+      color: m.searchIS === null || m.searchIS === undefined ? 'gris'
+           : m.searchIS > 60  ? 'verde'
+           : m.searchIS >= 35 ? 'naranja' : 'rojo'
+    }
+  ];
+
+  let h = `<div class="card"><div class="card-title">SEMÁFORO DE MÉTRICAS</div><div class="semaforo-grid">`;
+  items.forEach(item => {
+    const sinDato = item.valor === null;
+    h += `
+    <div class="semaforo-card">
+      <div class="semaforo-circle sem-${item.color}">${sinDato ? '—' : esc(item.valor)}</div>
+      <div class="semaforo-label">${item.label}</div>
+      ${sinDato ? '<div class="semaforo-sin-dato">Sin datos</div>' : ''}
+    </div>`;
+  });
+  h += `</div></div>`;
+  return h;
+}
+
 function renderResults(d) {
   window._auditData = d;
 
@@ -2119,6 +2240,9 @@ function renderResults(d) {
       ${d.checksTotalesEvaluados ? `<span class="hs-checks">${d.checksTotalesEvaluados} checks evaluados</span>` : ''}
     </div>` : ''}
   </div>`;
+
+  /* --- BLOQUE 1b: SEMÁFORO DE MÉTRICAS --- */
+  h += renderSemaforos(d.metricas);
 
   /* --- BLOQUE 2: CHECKS CRÍTICOS --- */
   if (d.checksCriticos?.length) {
