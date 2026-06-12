@@ -178,6 +178,22 @@ textarea.inp {
 .btn-run:hover:not(:disabled) { background: #d4b880; box-shadow: 0 0 24px rgba(201,169,110,.35); }
 .btn-run:disabled { opacity: .55; cursor: not-allowed; }
 
+/* Pills de selección (rango de fechas sección 00) */
+.pill-group { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.pill {
+  padding: 5px 14px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--t2);
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.pill:hover { border-color: var(--gold); color: var(--t1); }
+.pill-active { border-color: var(--gold); color: var(--gold); background: rgba(201,169,110,.1); }
+
 /* Spinner pequeño */
 .spin {
   width: 17px; height: 17px;
@@ -789,6 +805,16 @@ textarea.inp {
         <input id="mcp-customer-id" type="text" class="inp" placeholder="Ej: 123-456-7890">
       </div>
 
+      <div class="fg" style="margin-bottom:12px;">
+        <label class="lbl">Rango de fechas</label>
+        <div class="pill-group" id="mcp-date-pills">
+          <button class="pill" onclick="setMcpDateRange('TODAY',this)">Hoy</button>
+          <button class="pill" onclick="setMcpDateRange('LAST_7_DAYS',this)">7 días</button>
+          <button class="pill pill-active" onclick="setMcpDateRange('LAST_14_DAYS',this)">14 días</button>
+          <button class="pill" onclick="setMcpDateRange('LAST_30_DAYS',this)">30 días</button>
+        </div>
+      </div>
+
       <button
         id="btn-mcp-import"
         class="btn-run"
@@ -797,6 +823,7 @@ textarea.inp {
       >IMPORTAR DATOS</button>
 
       <div id="mcp-import-status" style="margin-top:8px;"></div>
+      <div id="mcp-signal"></div>
     </div>
 
     <!-- Sección 1: Datos de la cuenta -->
@@ -1037,8 +1064,26 @@ textarea.inp {
 
 <script>
 /* ================================================
+   UMBRALES SEMÁFORO — editar aquí para ajustar límites
+================================================ */
+const SIG_CTR_RED   = 2.0;  // CTR medio (%) < este valor → rojo
+const SIG_CTR_ORA   = 3.0;  // CTR medio (%) < este valor → naranja
+const SIG_WASTE_RED = 30;   // % gasto sin conversión > este valor → rojo
+const SIG_WASTE_ORA = 20;   // % gasto sin conversión > este valor → naranja
+// QS — pendiente segunda iteración (requiere cambios en el MCP)
+
+/* ================================================
    MCP GOOGLE ADS — IMPORTACIÓN DIRECTA
 ================================================ */
+
+// Rango de fechas activo para la importación MCP (Sección 00)
+let _mcpDateRange = 'LAST_14_DAYS';
+
+function setMcpDateRange(val, btn) {
+  _mcpDateRange = val;
+  document.querySelectorAll('#mcp-date-pills .pill').forEach(p => p.classList.remove('pill-active'));
+  btn.classList.add('pill-active');
+}
 
 async function mcpImportData() {
   const customerId = (document.getElementById('mcp-customer-id').value || '').trim();
@@ -1057,7 +1102,7 @@ async function mcpImportData() {
     const res = await fetch('/api/mcp-import', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ customer_id: customerId, date_range: 'LAST_14_DAYS' })
+      body: JSON.stringify({ customer_id: customerId, date_range: _mcpDateRange })
     });
 
     if (!res.ok) {
@@ -1072,10 +1117,98 @@ async function mcpImportData() {
     if (data.csv3) window._fileData3 = data.csv3;
 
     statusEl.innerHTML = '<div style="display:inline-block;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);color:#22c55e;font-size:11px;padding:6px 10px;letter-spacing:1px;margin-top:4px;">✓ 3 fuentes importadas desde Google Ads API</div>';
+
+    const signals = evaluateSignals(window._fileData2);
+    renderSignals(signals);
   } catch (err) {
     statusEl.innerHTML = `<div style="color:var(--fail);font-size:12px;margin-top:4px;">Error al importar: ${err.message}</div>`;
   } finally {
     btn.disabled = false;
+  }
+}
+
+/* ================================================
+   SEMÁFOROS DE ESTADO — evaluación y renderizado
+================================================ */
+
+function evaluateSignals(csv2) {
+  const issues = [];
+  let level = 'green';
+
+  if (!csv2) return { level, issues };
+
+  const lines  = csv2.trim().split('\n');
+  const header = lines[0].split(',');
+  const iCTR  = header.findIndex(h => h.trim().toUpperCase() === 'CTR');
+  const iCost = header.findIndex(h => /^coste$/i.test(h.trim()));
+  const iConv = header.findIndex(h => /^conversiones$/i.test(h.trim()));
+  const iImpr = header.findIndex(h => /^impr/i.test(h.trim()));
+
+  let totalImpr = 0, weightedCTR = 0, totalCost = 0, wastedCost = 0;
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',');
+    if (cols.length < 3) continue;
+    const ctr  = parseFloat((cols[iCTR]  || '').replace('%', '')) || 0;
+    const cost = parseFloat(cols[iCost]) || 0;
+    const conv = parseFloat(cols[iConv]) || 0;
+    const impr = parseFloat(cols[iImpr]) || 0;
+    totalImpr   += impr;
+    weightedCTR += ctr * impr;
+    totalCost   += cost;
+    if (conv === 0) wastedCost += cost;
+  }
+
+  const ctr        = totalImpr > 0 ? weightedCTR / totalImpr : null;
+  const wasteRatio = totalCost > 0 ? (wastedCost / totalCost) * 100 : null;
+
+  if (ctr !== null) {
+    if (ctr < SIG_CTR_RED) {
+      issues.push(`CTR medio: ${ctr.toFixed(2)}% — por debajo del umbral mínimo (${SIG_CTR_RED}%)`);
+      level = 'red';
+    } else if (ctr < SIG_CTR_ORA && level !== 'red') {
+      level = 'orange';
+    }
+  }
+  if (wasteRatio !== null) {
+    if (wasteRatio > SIG_WASTE_RED) {
+      issues.push(`Gasto sin conversión: ${wasteRatio.toFixed(1)}% del total — supera el umbral (${SIG_WASTE_RED}%)`);
+      level = 'red';
+    } else if (wasteRatio > SIG_WASTE_ORA && level !== 'red') {
+      level = 'orange';
+    }
+  }
+
+  return { level, issues };
+}
+
+function renderSignals(signals) {
+  const el = document.getElementById('mcp-signal');
+  if (!el) return;
+  const { level, issues } = signals;
+
+  if (level === 'red') {
+    const issueList = issues.map(i => `<li style="margin:2px 0">${i}</li>`).join('');
+    el.innerHTML = `
+      <div style="margin-top:12px;padding:12px 14px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font-size:15px">⚠</span>
+          <span style="font-size:11px;font-weight:700;letter-spacing:2px;color:#ef4444;">REVISIÓN URGENTE</span>
+        </div>
+        <ul style="font-size:11px;color:#f87171;padding-left:16px;line-height:1.8;">${issueList}</ul>
+      </div>`;
+  } else if (level === 'orange') {
+    el.innerHTML = `
+      <div style="margin-top:10px;display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);">
+        <span style="width:8px;height:8px;background:#f59e0b;border-radius:50%;flex-shrink:0;"></span>
+        <span style="font-size:11px;color:#f59e0b;letter-spacing:1px;">Datos importados — revisar métricas</span>
+      </div>`;
+  } else {
+    el.innerHTML = `
+      <div style="margin-top:10px;display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);">
+        <span style="width:8px;height:8px;background:#22c55e;border-radius:50%;flex-shrink:0;"></span>
+        <span style="font-size:11px;color:#22c55e;letter-spacing:1px;">Datos importados — métricas dentro de rango</span>
+      </div>`;
   }
 }
 
