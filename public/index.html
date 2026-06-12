@@ -2215,14 +2215,10 @@ function renderResults(d) {
   if (acciones.length) {
     h += `<div class="card"><div class="card-title">ACCIONES RÁPIDAS</div><div class="aq-grid">`;
     acciones.forEach(a => {
+      h += `<a class="btn-aq" href="${a.file}" download>${a.label}</a>`;
       if (a.content) {
         const resolved = applyDateRange(a.content);
-        const blobUrl  = URL.createObjectURL(new Blob([resolved], { type: 'text/javascript' }));
-        const filename = a.file.split('/').pop();
-        h += `<a class="btn-aq" href="${blobUrl}" download="${filename}">${a.label}</a>`;
         h += `<pre class="print-only">${resolved.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>`;
-      } else {
-        h += `<a class="btn-aq" href="${a.file}" download>${a.label}</a>`;
       }
     });
     h += `</div></div>`;
