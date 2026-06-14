@@ -10,13 +10,20 @@ var CONFIG = {
 };
 
 function main() {
+  var hoy = new Date();
+  var fin = Utilities.formatDate(hoy, 'Europe/Madrid', 'yyyyMMdd');
+  var inicio = Utilities.formatDate(
+    new Date(hoy - 30 * 24 * 3600 * 1000),
+    'Europe/Madrid', 'yyyyMMdd'
+  );
+
   var query =
     'SELECT search_term_view.search_term, metrics.clicks, metrics.impressions, ' +
     'metrics.cost_micros, metrics.conversions, campaign.name, ad_group.name ' +
     'FROM search_term_view ' +
     'WHERE metrics.conversions = 0 ' +
     '  AND metrics.cost_micros > ' + Math.round(CONFIG.GASTO_MINIMO_EUR * 1000000) + ' ' +
-    'DURING %%DATE_RANGE%%';
+    'DURING ' + inicio + ',' + fin;
 
   var report = AdsApp.report(query);
   var rows   = report.rows();
