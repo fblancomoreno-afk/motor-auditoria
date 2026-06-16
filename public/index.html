@@ -814,8 +814,9 @@ textarea.inp {
 </head>
 <body>
 
-<div id="engine-config" data-model="claude-sonnet-4-6" style="display:none;"></div>
-
+<!-- ============================
+     HEADER
+============================ -->
 <header class="hdr">
   <div>
     <div class="hdr-logo">ADS ENGINE AUDIT</div>
@@ -824,10 +825,17 @@ textarea.inp {
   <div class="hdr-badge" title="80 checks · Rocha + Francisco Blanco · Mayo 2026" style="cursor:help">SECTOR SERVICIOS · ESPAÑA · V2.0</div>
 </header>
 
+<!-- ============================
+     LAYOUT PRINCIPAL
+============================ -->
 <div class="layout">
 
+  <!-- ========================
+       PANEL IZQUIERDO
+  ======================== -->
   <div class="pnl-l">
 
+    <!-- Sección 0: Importar desde Google Ads MCP -->
     <div class="form-sec">
       <div class="sec-title">00 — IMPORTAR DESDE GOOGLE ADS</div>
 
@@ -846,11 +854,18 @@ textarea.inp {
         </div>
       </div>
 
-      <button id="btn-mcp-import" class="btn-run" style="background:#333;color:#f5f5f5;margin-top:0;" onclick="mcpImportData()">IMPORTAR DATOS</button>
+      <button
+        id="btn-mcp-import"
+        class="btn-run"
+        style="background:#333;color:#f5f5f5;margin-top:0;"
+        onclick="mcpImportData()"
+      >IMPORTAR DATOS</button>
+
       <div id="mcp-import-status" style="margin-top:8px;"></div>
       <div id="mcp-signal"></div>
     </div>
 
+    <!-- Sección 1: Datos de la cuenta -->
     <div class="form-sec">
       <div class="sec-title">01 — DATOS DE LA CUENTA</div>
 
@@ -918,14 +933,17 @@ textarea.inp {
       </div>
     </div>
 
+    <!-- Sección 2: Datos exportados (tabs: archivo / pegar) -->
     <div class="form-sec">
       <div class="sec-title">02 — DATOS EXPORTADOS DE GOOGLE ADS</div>
 
+      <!-- Selector de origen: CSV manual / Google Ads automático -->
       <div class="tab-sw" id="source-sw">
         <button class="tab-btn active" id="src-manual" onclick="switchSource('manual')">📁 CSV manual</button>
         <button class="tab-btn" id="src-gads" onclick="switchSource('gads')">☁️ Google Ads (automático)</button>
       </div>
 
+      <!-- Modo Google Ads -->
       <div id="modo-gads" style="display:none;">
         <label class="lbl" for="gads-account">Cuenta de Google Ads</label>
         <select id="gads-account" class="inp" style="margin-bottom:10px;">
@@ -945,234 +963,1539 @@ textarea.inp {
         <div id="gads-status" class="file-info"></div>
       </div>
 
+      <!-- Modo manual (todo lo de siempre) -->
       <div id="modo-manual">
-        <div class="tab-sw">
-          <button class="tab-btn active" id="tab-file" onclick="switchTab('file')">📎 Subir archivo</button>
-          <button class="tab-btn" id="tab-paste" onclick="switchTab('paste')">📋 Pegar datos</button>
+
+      <!-- Tab switcher CSV 1 -->
+      <div class="tab-sw">
+        <button class="tab-btn active" id="tab-file" onclick="switchTab('file')">📎 Subir archivo</button>
+        <button class="tab-btn" id="tab-paste" onclick="switchTab('paste')">📋 Pegar datos</button>
+      </div>
+
+      <!-- Pane A: subir archivo -->
+      <div class="tab-pane active" id="pane-file">
+        <div class="file-zone" onclick="document.getElementById('f-file').click()">
+          <div class="file-zone-icon">📁</div>
+          <div class="file-zone-txt">CSV 1 — principal<br><small style="font-size:10px;opacity:.7">Términos de búsqueda, Campañas o Keywords</small></div>
+          <input type="file" id="f-file" accept=".csv,.xlsx,.txt" onchange="handleFile(this, 1)">
+        </div>
+        <div id="file-info" class="file-info"></div>
+      </div>
+
+      <!-- Pane B: pegar texto -->
+      <div class="tab-pane" id="pane-paste">
+        <button class="btn-demo" onclick="loadTestData()">⚡ Cargar datos de prueba — Abogado Madrid</button>
+        <textarea id="f-datos" class="inp" placeholder="Pega aquí el CSV 1 exportado de Google Ads:
+- Términos de búsqueda
+- Campañas con métricas
+- Keywords con Quality Score"></textarea>
+      </div>
+
+      <!-- == CSVS ADICIONALES (2 y 3) == -->
+      <div class="csv-extra">
+        <div class="csv-extra-label">
+          CSVs adicionales <span>OPCIONAL</span>
         </div>
 
-        <div class="tab-pane active" id="pane-file">
-          <div class="file-zone" onclick="document.getElementById('f-file').click()">
-            <div class="file-zone-icon">📁</div>
-            <div class="file-zone-txt">CSV 1 — principal<br><small style="font-size:10px;opacity:.7">Términos de búsqueda, Campañas o Keywords</small></div>
-            <input type="file" id="f-file" accept=".csv,.xlsx,.txt" onchange="handleFile(this, 1)">
+        <!-- CSV 2 -->
+        <div class="csv-slot">
+          <div class="csv-slot-header">
+            <span class="csv-slot-lbl">CSV 2 — Términos de búsqueda / Campañas</span>
+            <button class="csv-slot-clear" onclick="clearCsvSlot(2)" title="Limpiar">✕</button>
           </div>
-          <div id="file-info" class="file-info"></div>
-        </div>
-
-        <div class="tab-pane" id="pane-paste">
-          <button class="btn-demo" onclick="loadTestData()">⚡ Cargar datos de prueba — Abogado Madrid</button>
-          <textarea id="f-datos" class="inp" placeholder="Pega aquí el CSV 1 exportado de Google Ads..."></textarea>
-        </div>
-
-        <div class="csv-extra">
-          <div class="csv-extra-label">CSVs adicionales <span>OPCIONAL</span></div>
-
-          <div class="csv-slot">
-            <div class="csv-slot-header">
-              <span class="csv-slot-lbl">CSV 2 — Términos / Palabras Clave</span>
-              <button class="csv-slot-clear" onclick="clearCsvSlot(2)">✕</button>
-            </div>
-            <div class="tab-sw" style="margin-bottom:6px;">
-              <button class="tab-btn active" id="tab2-file" onclick="switchTab2('file')">📎 Archivo</button>
-              <button class="tab-btn" id="tab2-paste" onclick="switchTab2('paste')">📋 Pegar</button>
-            </div>
-            <div class="file-zone-sm" onclick="document.getElementById('f-file-2').click()">
-              <span class="file-zone-sm-txt">Adjuntar CSV 2</span>
-              <input type="file" id="f-file-2" accept=".csv,.txt" onchange="handleFile(this, 2)">
-            </div>
-            <div id="file-info-2" class="file-info-sm"></div>
+          <div class="tab-sw" style="margin-bottom:6px;">
+            <button class="tab-btn active" id="tab2-file" onclick="switchTab2('file')">📎 Archivo</button>
+            <button class="tab-btn" id="tab2-paste" onclick="switchTab2('paste')">📋 Pegar</button>
           </div>
+          <div id="pane2-file" class="tab-pane active">
+            <div class="file-zone-sm" onclick="document.getElementById('f-file2').click()">
+              <span style="font-size:18px;">📁</span>
+              <span class="file-zone-sm-txt">Subir CSV 2</span>
+              <input type="file" id="f-file2" accept=".csv,.xlsx,.txt" onchange="handleFile(this, 2)">
+            </div>
+          </div>
+          <div id="pane2-paste" class="tab-pane">
+            <textarea id="f-datos2" class="inp" style="min-height:100px;" placeholder="Pega aquí el CSV 2..."></textarea>
+          </div>
+          <div id="file-info2" class="file-info-sm"></div>
+        </div>
+
+        <!-- CSV 3 -->
+        <div class="csv-slot">
+          <div class="csv-slot-header">
+            <span class="csv-slot-lbl">CSV 3 — Keywords / Grupos de anuncios</span>
+            <button class="csv-slot-clear" onclick="clearCsvSlot(3)" title="Limpiar">✕</button>
+          </div>
+          <div class="tab-sw" style="margin-bottom:6px;">
+            <button class="tab-btn active" id="tab3-file" onclick="switchTab3('file')">📎 Archivo</button>
+            <button class="tab-btn" id="tab3-paste" onclick="switchTab3('paste')">📋 Pegar</button>
+          </div>
+          <div id="pane3-file" class="tab-pane active">
+            <div class="file-zone-sm" onclick="document.getElementById('f-file3').click()">
+              <span style="font-size:18px;">📁</span>
+              <span class="file-zone-sm-txt">Subir CSV 3</span>
+              <input type="file" id="f-file3" accept=".csv,.xlsx,.txt" onchange="handleFile(this, 3)">
+            </div>
+          </div>
+          <div id="pane3-paste" class="tab-pane">
+            <textarea id="f-datos3" class="inp" style="min-height:100px;" placeholder="Pega aquí el CSV 3..."></textarea>
+          </div>
+          <div id="file-info3" class="file-info-sm"></div>
+        </div>
+
+        <div id="csv-sources-summary" class="csv-sources-badge" style="display:none;">
+          📊 <span id="csv-count-label"></span>
         </div>
       </div>
+
+      <div class="data-help">
+        <strong>¿Cómo exportar de Google Ads?</strong>
+        Términos de búsqueda → Descargar → CSV (últimos 14 días)<br>
+        Campañas → Descargar → CSV con todas las columnas<br>
+        Keywords → Palabras clave → Descargar → CSV
+      </div>
+
+      </div><!-- /modo-manual -->
     </div>
 
-    <button id="btn-run-audit" class="btn-run" onclick="runAudit()">EJECUTAR AUDITORÍA MOTOR</button>
+    <button class="btn-run" id="btn-run" onclick="runAudit()">
+      <span id="btn-label">EJECUTAR AUDITORÍA</span>
+    </button>
+    <div id="audit-row-info" style="font-size:10px;color:var(--t2);letter-spacing:1px;text-align:center;margin-top:7px;min-height:15px;"></div>
 
-  </div>
+  </div><!-- /pnl-l -->
 
-  <div class="pnl-r">
+  <!-- ========================
+       PANEL DERECHO
+  ======================== -->
+  <div class="pnl-r" id="pnl-r">
 
-    <div id="st-empty" class="st-empty">
+    <!-- Estado: vacío -->
+    <div class="st-empty" id="st-empty">
       <div class="st-empty-icon">📊</div>
-      <div class="st-empty-txt">Introduce los datos de la cuenta de Google Ads y ejecuta el motor para ver el reporte detallado.</div>
+      <div class="st-empty-txt">Introduce los datos de la cuenta y ejecuta la auditoría para ver el informe aquí.</div>
     </div>
 
-    <div id="st-load" class="st-load" style="display:none;">
+    <!-- Estado: cargando -->
+    <div class="st-load" id="st-load" style="display:none">
       <div class="spin-lg"></div>
-      <div class="load-txt">PROCESANDO AUDITORÍA</div>
-      <div class="load-bar-wrap">
-        <div class="load-bar"></div>
-      </div>
+      <div class="load-txt">EL AUDITOR ESTÁ ANALIZANDO LA CUENTA...</div>
+      <div class="load-bar-wrap"><div class="load-bar"></div></div>
     </div>
 
-    <div id="results" style="display:none;" class="results">
-      
-      <div class="card">
-        <div class="card-title">HEALTH SCORE GENERAL</div>
-        <div class="hs-top">
-          <div class="hs-num" id="lbl-score">85</div>
-          <div class="hs-grade" id="lbl-grade">A</div>
-          <div class="hs-meta">
-            <div class="hs-client" id="lbl-client-name">Cliente</div>
-            <div class="hs-date" id="lbl-audit-date">Análisis de Cuenta</div>
-            <div class="hs-bar-wrap">
-              <div class="hs-bar" id="bar-score" style="width: 85%; background: var(--pass);"></div>
-            </div>
-            <div class="hs-meta-row">
-              <span class="hs-tipo" id="engine-badge-model">AUDIT LEVEL</span>
-              <span class="hs-checks">80 checks ejecutados con éxito</span>
-            </div>
-          </div>
-        </div>
+    <!-- Estado: error -->
+    <div class="st-err" id="st-err" style="display:none"></div>
 
-        <div class="ss-grid">
-          <div class="ss-item">
-            <div class="ss-lbl">Estructura</div>
-            <div class="ss-val" id="score-est">25<span class="ss-max">/30</span></div>
-          </div>
-          <div class="ss-item">
-            <div class="ss-lbl">Optimización Eficiente</div>
-            <div class="ss-val" id="score-opt">35<span class="ss-max">/40</span></div>
-          </div>
-          <div class="ss-item">
-            <div class="ss-lbl">Calidad / Tráfico</div>
-            <div class="ss-val" id="score-qlty">25<span class="ss-max">/30</span></div>
-          </div>
-        </div>
-      </div>
+    <!-- Resultados -->
+    <div id="results" style="display:none"></div>
 
-      <div class="card">
-        <div class="card-title">SEMÁFORO ANALÍTICO CRÍTICO</div>
-        <div class="semaforo-grid">
-          <div class="semaforo-card">
-            <div class="semaforo-circle sem-verde" id="sem-ctr">N/A</div>
-            <div class="semaforo-label">CTR</div>
-          </div>
-          <div class="semaforo-card">
-            <div class="semaforo-circle sem-naranja" id="sem-cpc">N/A</div>
-            <div class="semaforo-label">CPC</div>
-          </div>
-          <div class="semaforo-card">
-            <div class="semaforo-circle sem-rojo" id="sem-conv">N/A</div>
-            <div class="semaforo-label">CONV</div>
-          </div>
-          <div class="semaforo-card">
-            <div class="semaforo-circle sem-gris" id="sem-cpa">N/A</div>
-            <div class="semaforo-label">CPA</div>
-          </div>
-          <div class="semaforo-card">
-            <div class="semaforo-circle sem-gris" id="sem-roas">N/A</div>
-            <div class="semaforo-label">ROAS</div>
-          </div>
-          <div class="semaforo-card">
-            <div class="semaforo-circle sem-gris" id="sem-burn">N/A</div>
-            <div class="semaforo-label">WASTE</div>
-          </div>
-          <div class="semaforo-card">
-            <div class="semaforo-circle sem-gris" id="sem-is">N/A</div>
-            <div class="semaforo-label">MISSED IS</div>
-          </div>
-        </div>
-      </div>
+  </div><!-- /pnl-r -->
 
-      <div class="card">
-        <div class="card-title">DETECCIÓN DE PÉRDIDAS FINANCIERAS</div>
-        <div class="prob">
-          <div class="prob-n">01</div>
-          <div class="prob-t">Fuga detectada en Términos Inadecuados</div>
-          <div class="prob-d">Palabras de búsqueda sin conversión que están consumiendo un porcentaje excesivo del presupuesto diario asignado.</div>
-          <div class="prob-eur-lbl">IMPACTO ESTIMADO DE PÉRDIDA:</div>
-          <div class="prob-eur" id="waste-amount">0.00 €</div>
-          <div class="prob-fix">RECOMENDACIÓN DE ACCIÓN URGENTE</div>
-          <ul class="prob-steps">
-            <li>Negativizar de inmediato los términos irrelevantes identificados en el reporte de términos de búsqueda.</li>
-            <li>Ajustar concordancias amplias a frase o exacta en los grupos con bajo rendimiento acumulado.</li>
-          </ul>
-        </div>
-      </div>
+</div><!-- /layout -->
 
-      <div class="act-btns">
-        <button class="btn-copy" onclick="copyReport()">📋 COPIAR DATOS</button>
-        <button class="btn-pdf" onclick="window.print()">🖨️ IMPRIMIR / EXPORTAR PDF</button>
-        <button class="btn-new" onclick="resetAudit()">✕ NUEVA AUDITORÍA</button>
-      </div>
-
-    </div>
-  </div>
-</div>
-
+<!-- ============================
+     FOOTER
+============================ -->
 <footer class="ftr">
-  <div class="ftr-txt">ADS ENGINE AUDIT © 2026 · Sistema Profesional de Auditoría Externa</div>
-  <div class="ftr-txt">Diseñado bajo estándares de optimización avanzada.</div>
+  <div class="ftr-txt">Francisco Blanco © 2026 — <a href="https://franciscoblanco.net" target="_blank">franciscoblanco.net</a></div>
+  <div class="ftr-txt" style="color:#2a2a2a">ADS ENGINE AUDIT V2.0</div>
 </footer>
 
 <script>
-  function switchTab(type) {
-    document.getElementById('tab-file').classList.toggle('active', type === 'file');
-    document.getElementById('tab-paste').classList.toggle('active', type === 'paste');
-    document.getElementById('pane-file').style.display = type === 'file' ? 'block' : 'none';
-    document.getElementById('pane-paste').style.display = type === 'paste' ? 'block' : 'none';
-  }
-  
-  function switchSource(source) {
-    document.getElementById('src-manual').classList.toggle('active', source === 'manual');
-    document.getElementById('src-gads').classList.toggle('active', source === 'gads');
-    document.getElementById('modo-manual').style.display = source === 'manual' ? 'block' : 'none';
-    document.getElementById('modo-gads').style.display = source === 'gads' ? 'block' : 'none';
+/* ================================================
+   UMBRALES SEMÁFORO — editar aquí para ajustar límites
+================================================ */
+const SIG_CTR_RED   = 2.0;  // CTR medio (%) < este valor → rojo
+const SIG_CTR_ORA   = 3.0;  // CTR medio (%) < este valor → naranja
+const SIG_WASTE_RED = 30;   // % gasto sin conversión > este valor → rojo
+const SIG_WASTE_ORA = 20;   // % gasto sin conversión > este valor → naranja
+// QS — pendiente segunda iteración (requiere cambios en el MCP)
+
+/* ================================================
+   MCP GOOGLE ADS — IMPORTACIÓN DIRECTA
+================================================ */
+
+// Rango de fechas activo para la importación MCP (Sección 00)
+let _mcpDateRange = 'LAST_14_DAYS';
+
+function setMcpDateRange(val, btn) {
+  _mcpDateRange = val;
+  document.querySelectorAll('#mcp-date-pills .pill').forEach(p => p.classList.remove('pill-active'));
+  btn.classList.add('pill-active');
+}
+
+async function mcpImportData() {
+  const customerId = (document.getElementById('mcp-customer-id').value || '').trim();
+  const statusEl   = document.getElementById('mcp-import-status');
+  const btn        = document.getElementById('btn-mcp-import');
+
+  if (!customerId) {
+    statusEl.innerHTML = '<div style="color:var(--fail);font-size:12px;margin-top:4px;">Introduce un Customer ID antes de importar.</div>';
+    return;
   }
 
-  function switchTab2(type) {
-    document.getElementById('tab2-file').classList.toggle('active', type === 'file');
-    document.getElementById('tab2-paste').classList.toggle('active', type === 'paste');
+  btn.disabled = true;
+  statusEl.innerHTML = '<div style="color:var(--t2);font-size:12px;margin-top:4px;">Importando datos…</div>';
+
+  try {
+    const res = await fetch('/api/mcp-import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ customer_id: customerId, date_range: _mcpDateRange })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      const msg = err?.detail || err?.error?.message || `HTTP ${res.status}`;
+      throw new Error(msg);
+    }
+
+    const data = await res.json();
+    if (data.csv1) window._fileData1 = data.csv1;
+    if (data.csv2) window._fileData2 = data.csv2;
+    if (data.csv3) window._fileData3 = data.csv3;
+
+    statusEl.innerHTML = '<div style="display:inline-block;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);color:#22c55e;font-size:11px;padding:6px 10px;letter-spacing:1px;margin-top:4px;">✓ 3 fuentes importadas desde Google Ads API</div>';
+
+    const signals = evaluateSignals(window._fileData2);
+    renderSignals(signals);
+  } catch (err) {
+    statusEl.innerHTML = `<div style="color:var(--fail);font-size:12px;margin-top:4px;">Error al importar: ${err.message}</div>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* ================================================
+   SEMÁFOROS DE ESTADO — evaluación y renderizado
+================================================ */
+
+function evaluateSignals(csv2) {
+  const issues = [];
+  let level = 'green';
+
+  if (!csv2) return { level, issues };
+
+  const lines  = csv2.trim().split('\n');
+  const header = lines[0].split(',');
+  const iCTR  = header.findIndex(h => h.trim().toUpperCase() === 'CTR');
+  const iCost = header.findIndex(h => /^coste$/i.test(h.trim()));
+  const iConv = header.findIndex(h => /^conversiones$/i.test(h.trim()));
+  const iImpr = header.findIndex(h => /^impr/i.test(h.trim()));
+
+  let totalImpr = 0, weightedCTR = 0, totalCost = 0, wastedCost = 0;
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',');
+    if (cols.length < 3) continue;
+    const ctr  = parseFloat((cols[iCTR]  || '').replace('%', '')) || 0;
+    const cost = parseFloat(cols[iCost]) || 0;
+    const conv = parseFloat(cols[iConv]) || 0;
+    const impr = parseFloat(cols[iImpr]) || 0;
+    totalImpr   += impr;
+    weightedCTR += ctr * impr;
+    totalCost   += cost;
+    if (conv === 0) wastedCost += cost;
   }
 
-  // Simulación del motor de auditoría actualizado
-  function runAudit() {
-    document.getElementById('st-empty').style.display = 'none';
-    document.getElementById('st-load').style.display = 'flex';
-    document.getElementById('results').style.display = 'none';
-    
-    // Obtener la versión activa del motor desde la configuración del documento
-    const activeModel = document.getElementById('engine-config').getAttribute('data-model');
-    
-    setTimeout(() => {
-      document.getElementById('st-load').style.display = 'none';
-      document.getElementById('results').style.display = 'flex';
-      
-      // Inyectar datos del formulario en el panel derecho de forma dinámica
-      const cliente = document.getElementById('f-cliente').value || 'Cliente General';
-      document.getElementById('lbl-client-name').innerText = cliente;
-      
-      // Mostrar visualmente el modelo que procesó la información
-      document.getElementById('engine-badge-model').innerText = "ENGINE: " + activeModel.toUpperCase();
-      
-      const gasto = parseFloat(document.getElementById('f-gasto').value) || 0;
-      if (gasto > 0) {
-        document.getElementById('waste-amount').innerText = (gasto * 0.22).toFixed(2) + ' €'; 
+  const ctr        = totalImpr > 0 ? weightedCTR / totalImpr : null;
+  const wasteRatio = totalCost > 0 ? (wastedCost / totalCost) * 100 : null;
+
+  if (ctr !== null) {
+    if (ctr < SIG_CTR_RED) {
+      issues.push(`CTR medio: ${ctr.toFixed(2)}% — por debajo del umbral mínimo (${SIG_CTR_RED}%)`);
+      level = 'red';
+    } else if (ctr < SIG_CTR_ORA && level !== 'red') {
+      level = 'orange';
+    }
+  }
+  if (wasteRatio !== null) {
+    if (wasteRatio > SIG_WASTE_RED) {
+      issues.push(`Gasto sin conversión: ${wasteRatio.toFixed(1)}% del total — supera el umbral (${SIG_WASTE_RED}%)`);
+      level = 'red';
+    } else if (wasteRatio > SIG_WASTE_ORA && level !== 'red') {
+      level = 'orange';
+    }
+  }
+
+  return { level, issues };
+}
+
+function renderSignals(signals) {
+  const el = document.getElementById('mcp-signal');
+  if (!el) return;
+  const { level, issues } = signals;
+
+  if (level === 'red') {
+    const issueList = issues.map(i => `<li style="margin:2px 0">${i}</li>`).join('');
+    el.innerHTML = `
+      <div style="margin-top:12px;padding:12px 14px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font-size:15px">⚠</span>
+          <span style="font-size:11px;font-weight:700;letter-spacing:2px;color:#ef4444;">REVISIÓN URGENTE</span>
+        </div>
+        <ul style="font-size:11px;color:#f87171;padding-left:16px;line-height:1.8;">${issueList}</ul>
+      </div>`;
+  } else if (level === 'orange') {
+    el.innerHTML = `
+      <div style="margin-top:10px;display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);">
+        <span style="width:8px;height:8px;background:#f59e0b;border-radius:50%;flex-shrink:0;"></span>
+        <span style="font-size:11px;color:#f59e0b;letter-spacing:1px;">Datos importados — revisar métricas</span>
+      </div>`;
+  } else {
+    el.innerHTML = `
+      <div style="margin-top:10px;display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);">
+        <span style="width:8px;height:8px;background:#22c55e;border-radius:50%;flex-shrink:0;"></span>
+        <span style="font-size:11px;color:#22c55e;letter-spacing:1px;">Datos importados — métricas dentro de rango</span>
+      </div>`;
+  }
+}
+
+/* ================================================
+   UTILIDADES
+================================================ */
+
+function scoreColor(n) {
+  if (n >= 90) return '#ffd700';
+  if (n >= 75) return '#22c55e';
+  if (n >= 60) return '#f59e0b';
+  if (n >= 40) return '#f97316';
+  return '#ef4444';
+}
+
+function scoreGrade(n) {
+  if (n >= 90) return 'A';
+  if (n >= 80) return 'B';
+  if (n >= 70) return 'C';
+  if (n >= 60) return 'D';
+  return 'F';
+}
+
+function badge(r) {
+  const u = (r || '').toUpperCase();
+  if (u === 'PASS')    return { cls: 'bp', icon: '✓', txt: 'PASS' };
+  if (u === 'WARNING') return { cls: 'bw', icon: '⚠', txt: 'WARN' };
+  if (u === 'FAIL')    return { cls: 'bf', icon: '✗', txt: 'FAIL' };
+  return { cls: 'bw', icon: '?', txt: u };
+}
+
+function esc(s) {
+  return String(s || '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function getCampanas() {
+  return [...document.querySelectorAll('.cb-row input:checked')]
+    .map(c => c.value).join(', ') || 'No especificadas';
+}
+
+function showState(s) {
+  ['st-empty','st-load','st-err','results'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  const el = document.getElementById(s);
+  if (el) el.style.display = (s === 'st-load' || s === 'st-empty') ? 'flex' : 'block';
+}
+
+function showErr(msg) {
+  showState('st-err');
+  document.getElementById('st-err').innerHTML =
+    `<strong>ERROR</strong><br><br>${esc(msg)}`;
+  resetBtn();
+}
+
+function resetBtn() {
+  const b = document.getElementById('btn-run');
+  b.disabled = false;
+  b.innerHTML = '<span id="btn-label">EJECUTAR AUDITORÍA</span>';
+  const infoEl = document.getElementById('audit-row-info');
+  if (infoEl) infoEl.textContent = '';
+}
+
+/* ================================================
+   TAB SWITCHERS
+================================================ */
+function switchTab(tab) {
+  ['file','paste'].forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+    document.getElementById('pane-' + t).classList.toggle('active', t === tab);
+  });
+}
+
+function switchTab2(tab) {
+  ['file','paste'].forEach(t => {
+    document.getElementById('tab2-' + t).classList.toggle('active', t === tab);
+    document.getElementById('pane2-' + t).classList.toggle('active', t === tab);
+  });
+}
+
+function switchTab3(tab) {
+  ['file','paste'].forEach(t => {
+    document.getElementById('tab3-' + t).classList.toggle('active', t === tab);
+    document.getElementById('pane3-' + t).classList.toggle('active', t === tab);
+  });
+}
+
+/* ================================================
+   CARGA DE ARCHIVOS — MULTI CSV
+================================================ */
+function handleFile(input, slot) {
+  const file = input.files[0];
+  if (!file) return;
+  const infoId = slot === 1 ? 'file-info' : `file-info${slot}`;
+  const info = document.getElementById(infoId);
+  info.textContent = 'Leyendo archivo...';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const content = e.target.result;
+    const lines = content.split('\n').filter(l => l.trim()).length;
+    window[`_fileData${slot}`] = content;
+    info.textContent = `✓ ${file.name} — ${lines} filas`;
+    updateCsvSummary();
+  };
+  reader.onerror = function() {
+    info.textContent = '✗ Error al leer el archivo.';
+    info.style.color = 'var(--fail)';
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function clearCsvSlot(slot) {
+  window[`_fileData${slot}`] = null;
+  const fileInput = document.getElementById(`f-file${slot}`);
+  if (fileInput) fileInput.value = '';
+  const textarea = document.getElementById(`f-datos${slot}`);
+  if (textarea) textarea.value = '';
+  const info = document.getElementById(`file-info${slot}`);
+  if (info) info.textContent = '';
+  updateCsvSummary();
+}
+
+function updateCsvSummary() {
+  const activeTab = document.getElementById('tab-file').classList.contains('active') ? 'file' : 'paste';
+  const d1 = activeTab === 'file' ? (window._fileData1 || '') : (document.getElementById('f-datos')?.value || '');
+
+  const tab2 = document.getElementById('tab2-file').classList.contains('active') ? 'file' : 'paste';
+  const d2 = tab2 === 'file' ? (window._fileData2 || '') : (document.getElementById('f-datos2')?.value || '');
+
+  const tab3 = document.getElementById('tab3-file').classList.contains('active') ? 'file' : 'paste';
+  const d3 = tab3 === 'file' ? (window._fileData3 || '') : (document.getElementById('f-datos3')?.value || '');
+
+  const count = [d1, d2, d3].filter(d => d.trim()).length;
+  const badge = document.getElementById('csv-sources-summary');
+  const label = document.getElementById('csv-count-label');
+
+  if (count > 1) {
+    badge.style.display = 'inline-flex';
+    label.textContent = `${count} fuentes de datos cargadas — análisis cruzado`;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+/* ================================================
+   GOOGLE ADS — CARGA AUTOMÁTICA VÍA SERVIDOR
+================================================ */
+let _gadsAccountsLoaded = false;
+
+function switchSource(mode) {
+  document.getElementById('src-manual').classList.toggle('active', mode === 'manual');
+  document.getElementById('src-gads').classList.toggle('active', mode === 'gads');
+  document.getElementById('modo-manual').style.display = mode === 'manual' ? '' : 'none';
+  document.getElementById('modo-gads').style.display = mode === 'gads' ? '' : 'none';
+  if (mode === 'gads' && !_gadsAccountsLoaded) gadsLoadAccounts();
+}
+
+function gadsStatus(msg, isError) {
+  const el = document.getElementById('gads-status');
+  el.innerHTML = msg;
+  el.style.color = isError ? 'var(--fail)' : 'var(--pass)';
+}
+
+async function gadsLoadAccounts() {
+  const sel = document.getElementById('gads-account');
+  sel.innerHTML = '<option value="">Cargando cuentas…</option>';
+  gadsStatus('', false);
+  try {
+    const res = await fetch('/api/google-ads/accounts');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error?.message || `Error ${res.status}`);
+
+    const cuentas = data.accounts || [];
+    if (!cuentas.length) throw new Error('No se encontraron cuentas hijas en el MCC.');
+
+    sel.innerHTML = '<option value="">— Selecciona una cuenta —</option>' +
+      cuentas.map(c => `<option value="${esc(c.id)}">${esc(c.nombre)}${c.moneda ? ' (' + esc(c.moneda) + ')' : ''}</option>`).join('');
+    _gadsAccountsLoaded = true;
+  } catch (err) {
+    sel.innerHTML = '<option value="">⚠ No se pudieron cargar las cuentas</option>';
+    gadsStatus('✗ ' + esc(err.message) + '<br>Puedes <a href="#" style="color:var(--gold)" onclick="gadsLoadAccounts();return false;">reintentar</a> o usar el modo CSV manual.', true);
+  }
+}
+
+async function gadsFetchData() {
+  const accountSel = document.getElementById('gads-account');
+  const customerId = accountSel.value;
+  const accountName = accountSel.options[accountSel.selectedIndex]?.text || '';
+  const range = document.getElementById('gads-range').value;
+  const rangeLabel = { LAST_7_DAYS: '7 días', LAST_30_DAYS: '30 días', LAST_90_DAYS: '90 días' }[range] || range;
+
+  if (!customerId) { gadsStatus('✗ Selecciona primero una cuenta de Google Ads.', true); return; }
+
+  const btn = document.getElementById('gads-load-btn');
+  btn.disabled = true;
+  btn.textContent = 'Descargando datos de Google Ads…';
+  gadsStatus('Conectando con Google Ads… puede tardar unos segundos.', false);
+
+  try {
+    const res = await fetch('/api/google-ads/data', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ customer_id: customerId, date_range: range })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error?.message || `Error ${res.status}`);
+
+    // Filas de datos (sin contar la cabecera) de cada CSV
+    const rows = csv => Math.max(0, (csv || '').split('\n').filter(l => l.trim()).length - 1);
+    const n1 = rows(data.csv1), n2 = rows(data.csv2), n3 = rows(data.csv3);
+
+    if (n1 + n2 + n3 === 0) {
+      throw new Error('Esta cuenta no tiene datos en ese rango de fechas. Prueba un rango mayor o usa el CSV manual.');
+    }
+
+    // Inyectar los CSVs en el mismo flujo que la subida manual.
+    // Solo los que traen datos, en orden, para que el CSV 1 (obligatorio)
+    // siempre quede ocupado: términos de búsqueda → campañas → keywords
+    const conDatos = [
+      { csv: data.csv1, filas: n1, lbl: 'Términos de búsqueda' },
+      { csv: data.csv2, filas: n2, lbl: 'Campañas' },
+      { csv: data.csv3, filas: n3, lbl: 'Keywords' }
+    ].filter(s => s.filas > 0);
+
+    switchTab('file'); switchTab2('file'); switchTab3('file');
+    for (let n = 1; n <= 3; n++) {
+      const s = conDatos[n - 1];
+      window[`_fileData${n}`] = s ? s.csv : null;
+      const info = document.getElementById(n === 1 ? 'file-info' : `file-info${n}`);
+      info.style.color = '';
+      info.textContent = s ? `✓ Google Ads — ${s.lbl} (${rangeLabel}) — ${s.filas} filas` : '';
+    }
+    updateCsvSummary();
+
+    let msg = `✓ Datos cargados de <strong>${esc(accountName)}</strong> (${rangeLabel}). Ya puedes ejecutar la auditoría.`;
+    if (n1 === 0) msg += '<br>⚠ Sin términos de búsqueda en este rango — la auditoría usará campañas y keywords.';
+    gadsStatus(msg, false);
+  } catch (err) {
+    gadsStatus('✗ ' + esc(err.message) + '<br>Como alternativa, puedes usar el modo CSV manual.', true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '☁️ CARGAR DATOS DE GOOGLE ADS';
+  }
+}
+
+/* ================================================
+   DATOS DE PRUEBA — ABOGADO MADRID
+================================================ */
+function loadTestData() {
+  const demo = `CUENTA: Despacho García & Asociados
+SECTOR: Abogados laboralistas
+CIUDAD: Madrid
+GASTO MENSUAL: 1.200€
+CPA OBJETIVO: 45€
+CAMPAÑAS ACTIVAS: Search + PMax
+
+=== TÉRMINOS DE BÚSQUEDA (últimos 14 días) ===
+abogado laboralista madrid | 234 imp | 18 clics | 2.10€ CPC | 2 conv
+abogado despido madrid | 189 imp | 14 clics | 2.45€ CPC | 1 conv
+abogado laboral barato | 156 imp | 12 clics | 1.80€ CPC | 0 conv
+como despedir a un trabajador | 98 imp | 8 clics | 1.20€ CPC | 0 conv
+abogado gratis madrid | 87 imp | 9 clics | 0.95€ CPC | 0 conv
+curso derecho laboral | 76 imp | 6 clics | 0.85€ CPC | 0 conv
+abogado accidente trabajo | 145 imp | 11 clics | 2.30€ CPC | 1 conv
+despido improcedente | 201 imp | 15 clics | 2.20€ CPC | 2 conv
+indemnizacion despido calculadora | 123 imp | 10 clics | 1.50€ CPC | 0 conv
+abogado laboralista precio | 89 imp | 7 clics | 1.90€ CPC | 0 conv
+bufete abogados madrid | 167 imp | 13 clics | 2.05€ CPC | 1 conv
+abogado online gratis | 134 imp | 11 clics | 0.90€ CPC | 0 conv
+
+=== CAMPAÑAS ===
+Search_Laboral_Madrid | 780€ gasto | 45 conv | 17.33€ CPA | 4.2% CVR
+PMax_General | 420€ gasto | 8 conv | 52.50€ CPA | 1.8% CVR
+
+=== KEYWORDS CON QUALITY SCORE ===
+abogado laboralista madrid | QS: 8 | CTR: 7.7% | CPC: 2.10€
+abogado despido madrid | QS: 7 | CTR: 7.4% | CPC: 2.45€
+abogado laboral madrid | QS: 6 | CTR: 5.8% | CPC: 2.20€
+laboralista madrid | QS: 5 | CTR: 4.2% | CPC: 2.80€
+abogado laboral barato | QS: 4 | CTR: 3.1% | CPC: 1.80€
+
+=== ANUNCIOS RSA ===
+RSA_Principal | Ad Strength: Bueno | 3 headlines QS alto
+RSA_Alternativo | Ad Strength: Promedio | necesita optimización
+
+=== CONFIGURACIÓN ===
+Enhanced Conversions: NO configurado
+Consent Mode v2: NO configurado
+Listas de negativos: 1 lista (solo "gratis")
+Última revisión search terms: hace 21 días
+Separación marca/genérico: NO
+Concordancia amplia activa: SÍ con CPC manual
+Remarketing: NO configurado
+Audiencias en observación: NO
+Clientes excluidos: NO
+Programación horaria: NO configurada
+Customer Match: NO`;
+
+  switchTab('paste');
+  document.getElementById('f-datos').value = demo;
+
+  if (!document.getElementById('f-cliente').value)
+    document.getElementById('f-cliente').value = 'Despacho García & Asociados';
+  if (!document.getElementById('f-sector').value)
+    document.getElementById('f-sector').value = 'Abogados';
+  if (!document.getElementById('f-ciudad').value)
+    document.getElementById('f-ciudad').value = 'Madrid';
+  if (!document.getElementById('f-gasto').value)
+    document.getElementById('f-gasto').value = '1200';
+  if (!document.getElementById('f-cpa').value)
+    document.getElementById('f-cpa').value = '45';
+  document.getElementById('f-tamano').value = 'media';
+  document.getElementById('f-objetivo').value = 'Leads';
+
+  document.querySelectorAll('.cb-row input').forEach(cb => {
+    cb.checked = (cb.value === 'Search' || cb.value === 'PMax');
+  });
+}
+
+/* ================================================
+   DESCARGAR PDF
+================================================ */
+function downloadPDF() {
+  window.print();
+}
+
+/* ================================================
+   SYSTEM PROMPT DEL AUDITOR
+================================================ */
+const SYSTEM_PROMPT = `Eres el Auditor Senior de Google Ads de Francisco Blanco, consultor independiente en Barcelona especializado en sector servicios (abogados, consultores, clínicas, servicios locales España). Sistema V2.0 — 80 checks Rocha.
+
+════════════════════════════════════════
+CHECKS CRÍTICOS — CONVERSIONES (peso 5x)
+════════════════════════════════════════
+G42  Acciones de conversión definidas y activas
+G43  Enhanced Conversions configurado
+G44  Ventana de conversión correcta (servicios: mín. 30 días click, 1 día view)
+G45  Consent Mode v2 implementado
+G46  Valor de conversión asignado a cada acción (sin valor = no se puede usar tROAS)
+G47  Conversiones de llamada configuradas (para servicios locales es el lead más valioso)
+G48  Seguimiento de formularios activo (thank-you page dispara conversión)
+G49  Importación de conversiones offline configurada (si el cierre ocurre fuera de web)
+G-CT1 Sin conversiones duplicadas
+G-CT2 Conversiones importadas desde GA4 correctamente vinculadas (sin esto hay discrepancia Ads/Analytics)
+G-CT3 Tag de conversión funcionando y verificado
+
+════════════════════════════════════════
+CHECKS CRÍTICOS — ESTRUCTURA (peso 5x)
+════════════════════════════════════════
+G05  Campaña de marca separada de genérico
+G06  Campañas separadas por tipo de servicio (ej: laboral/familia/mercantil en despacho)
+G07  Idiomas configurados: español + inglés en España
+G08  Segmentación geográfica con radio preciso, no "España" genérico
+G09  Rotación de anuncios en "Optimizar"
+G10  Programación horaria según horario del negocio
+G11  Ajustes de puja por dispositivo revisados (móvil suele necesitar -20% a +30% en servicios)
+G12  Sin campañas duplicadas activas
+G13  Revisión de search terms en los últimos 14 días
+G14  Mínimo de listas de negativos activas (varía por tamaño de cuenta)
+G16  Gasto desperdiciado por debajo del umbral
+G17  Sin keywords en concordancia amplia con CPC manual
+G37  CPA/ROAS objetivo realista vs. histórico
+
+════════════════════════════════════════
+CHECKS DE ANUNCIOS (G26-G35)
+════════════════════════════════════════
+G26  Mínimo 1 RSA activo por ad group
+G28  Headlines con keyword principal incluida
+G29  Descripciones con CTA claro y beneficio concreto
+G30  Extensiones de llamada activas con horario correcto
+G33  URLs finales funcionando sin redirects lentos
+G35  Sin anuncios pausados desde hace más de 90 días
+
+════════════════════════════════════════
+AUDIENCIAS Y REMARKETING (G50-G61)
+════════════════════════════════════════
+G50  Listas de remarketing configuradas y con volumen suficiente
+G51  Audiencias en observación activas en campañas Search
+G52  Clientes actuales excluidos de campañas de captación
+G53  Lista de visitantes web creada y activa
+G54  Duración de membresía correcta (mínimo 30 días en servicios)
+G55  Segmentación geográfica con radio preciso, no país entero
+G56  Ajustes de puja por dispositivo revisados y optimizados
+G57  Programación horaria alineada con horario del negocio
+G58  Ajustes de puja por audiencia configurados
+G59  Exclusión de menores de edad si aplica al sector
+G60  Idiomas configurados: español + inglés en España
+G61  Customer Match cargado si existe base de datos propia
+
+════════════════════════════════════════
+NEGATIVOS AVANZADOS
+════════════════════════════════════════
+G-KW1 Keywords de alto volumen / baja intención excluidas (gratis, cursos, opiniones, qué es)
+G-KW2 Lista de negativos cruzada entre campañas del mismo tema (evita canibalización)
+
+════════════════════════════════════════
+CHECKS PMAX (evaluar SOLO si hay PMax activa)
+════════════════════════════════════════
+G-PM1 Señales de audiencia configuradas por asset group
+G-PM2 Ad Strength PMax en bueno o excelente
+G-PM3 Canibalización con marca menor del 15%
+G-PM4 Search themes configurados (hasta 50 disponibles)
+G-PM5 Negativos aplicados a PMax (hasta 10.000)
+G-PM6 Sin ECPC obsoleto activo
+G31   Asset group completo: 5 imágenes, 2 logos, 1 vídeo mínimo
+G32   Vídeo nativo en 16:9, 1:1, 9:16
+G34   Final URL Expansion configurada correctamente
+FLAG ESPECIAL: si PMax consume más del 60% del presupuesto sin datos claros de rendimiento → añadir flag crítico
+
+════════════════════════════════════════
+CHECKS DEMAND GEN (evaluar SOLO si hay Demand Gen activa)
+════════════════════════════════════════
+G-DG1 Campañas de vídeo antiguas migradas a Demand Gen
+G-DG2 Límites de frecuencia VAC eliminados
+G-DG3 Sin Floodlight en campañas CTV
+
+════════════════════════════════════════
+CHECKS VIDEO / YOUTUBE (evaluar SOLO si hay Video activa)
+════════════════════════════════════════
+GV1  Formatos correctos: in-stream, bumpers, discovery
+GV2  View-through conversions configuradas
+GV3  Exclusiones de placement activas
+
+════════════════════════════════════════
+IA Y OBSOLESCENCIA
+════════════════════════════════════════
+G-AI1  Alguna campaña usando ECPC — migrar a tCPA/tROAS
+G-CTV1 Si hay campañas CTV: Floodlight NO funciona — cambiar tracking
+
+════════════════════════════════════════
+LÓGICA POR TIPO DE CAMPAÑA
+════════════════════════════════════════
+Determina el tipo de cuenta según las campañas activas declaradas:
+- Solo Search → tipoCuenta: "Search"
+- Search + PMax → tipoCuenta: "Search + PMax"
+- Search + PMax + más → tipoCuenta: "Full"
+- Otra combinación → tipoCuenta: "Mixta"
+
+Evalúa SOLO los checks relevantes al tipo de cuenta:
+- Siempre evaluar: Conversiones, Estructura, Anuncios Search, Audiencias, Negativos
+- Si PMax activa: evaluar checks G-PM1 a G-PM6, G31, G32, G34 → incluir en checksPMax[]
+- Si Demand Gen activa: evaluar G-DG1, G-DG2, G-DG3 → incluir en checksDemandGen[]
+- Si Video activa: evaluar GV1, GV2, GV3 → incluir en checksVideo[]
+- Si ningún tipo especial: arrays vacíos (no incluir en JSON)
+
+════════════════════════════════════════
+UMBRALES BASE
+════════════════════════════════════════
+Quality Score: PASS≥7 / WARNING 5-6 / FAIL≤4
+Gasto desperdiciado: PASS<5% / WARNING 5-15% / FAIL>15%
+CVR Search: PASS>5% / WARNING 3-5% / FAIL<2%
+CPA desviación: PASS<20% / WARNING 20-50% / FAIL>50%
+Search Lost IS budget: PASS<20% / WARNING 20-50% / FAIL>50%
+CTR Search: PASS>5% / WARNING 3-5% / FAIL<2%
+Ad Strength RSA: PASS Bueno/Excelente / WARNING Promedio / FAIL Pobre
+PMax Ad Strength: PASS Bueno/Excelente / WARNING Promedio / FAIL Pobre
+
+AJUSTE DE UMBRALES POR TAMAÑO DE CUENTA:
+PEQUEÑA (<500€/mes): QS mínimo ≥6, conversiones mínimas: 5 en 14 días, Learning Limited tolerable hasta 40%, Lost IS budget hasta 40%, negativos mínimos: 1 lista
+MEDIA (500-2000€/mes): Umbrales estándar, conversiones mínimas: 15 en 14 días, negativos mínimos: 2 listas
+GRANDE (>2000€/mes): QS exigible ≥7 estricto, conversiones mínimas: 30 en 14 días, Learning Limited máximo 20%, Lost IS budget máximo 15%, negativos mínimos: 3 listas, Enhanced Conversions obligatorio
+
+SCORING:
+Conversiones 25% | Negativos 20% | Estructura 15%
+Keywords 15% | Anuncios 15% | Configuración 10%
+Checks críticos (G42-G-CTV1): multiplicador 5x
+
+════════════════════════════════════════
+LÓGICA CONDICIONAL — PMAX PRESUPUESTO
+════════════════════════════════════════
+Cuando los datos incluyan CPA real de PMax, compara con el CPA objetivo declarado por el usuario:
+
+CASO A — CPA real PMax > CPA objetivo:
+  → NO recomendar en quickWins ni en proximosPasos escalar o aumentar presupuesto PMax.
+  → En su lugar, añadir en quickWins: {"accion": "Antes de escalar PMax, ejecutar Script de Negativos PMax para reducir CPA actual de [CPA_REAL]€ al objetivo de [CPA_OBJETIVO]€", "impacto": "Reducir coste por lead en PMax antes de invertir más presupuesto", "tiempo": "30 min"}
+  → Sustituye [CPA_REAL] y [CPA_OBJETIVO] con los valores numéricos reales.
+
+CASO B — CPA real PMax <= CPA objetivo:
+  → Mantener la recomendación habitual de redistribuir o escalar presupuesto PMax si procede.
+
+════════════════════════════════════════
+DIAGNÓSTICO CVR = 0%
+════════════════════════════════════════
+Cuando detectes CVR = 0% en una campaña, aplica este diagnóstico diferencial en lugar del genérico:
+
+CASO A — CTR < 2% Y CVR = 0%:
+  → Causa probable: tráfico informativo, keywords genéricas o concordancias demasiado amplias.
+  → En checksCriticos: resultado WARNING (no FAIL) con hallazgo "CTR bajo (< 2%) y CVR nulo sugieren tráfico informativo o keywords de baja intención. Ejecutar Script de Negativos Search antes de revisar el tracking".
+  → En problemas: título "Tráfico informativo captado por keywords genéricas", pasos: ["Ejecutar Script de Negativos Search para identificar términos sin conversión y alto gasto", "Revisar concordancias y reducir amplia si está activa con CPC manual", "Añadir negativos de términos informativos: gratis, cursos, qué es, opiniones, wikipedia"].
+
+CASO B — CTR >= 2% Y CVR = 0%:
+  → Causa probable: sistema de tracking roto o problema en la landing page.
+  → En checksCriticos: resultado FAIL con hallazgo "CTR aceptable (≥ 2%) pero CVR nulo indica sistema de tracking posiblemente roto o landing page sin formulario/llamada funcional".
+  → En problemas: título "Sistema de tracking posiblemente roto", pasos: ["Verificar tag de conversión con Google Tag Assistant", "Comprobar que la thank-you page dispara la conversión", "Revisar que el formulario de contacto envía correctamente"].
+
+════════════════════════════════════════
+PRÓXIMOS PASOS — SCRIPTS AUTOMÁTICOS
+════════════════════════════════════════
+Incluye SIEMPRE estos puntos en proximosPasos cuando apliquen (además de los pasos estratégicos habituales):
+- Si PMax activa → incluir en semana1: "Ejecutar Script de Negativos PMax para limpiar términos informativos y reducir CPA"
+- Si Search con CVR < 2% o CVR = 0% → incluir en semana1: "Ejecutar Script de Negativos Search antes de modificar pujas o presupuestos"
+- Si ambos aplican, incluir ambos en semana1 como primeras acciones prioritarias.
+
+════════════════════════════════════════
+ANÁLISIS MULTI-FUENTE
+════════════════════════════════════════
+Cuando recibas datos de múltiples CSVs (indicados como CSV 1, CSV 2, CSV 3):
+- Cruza la información entre fuentes para enriquecer el análisis
+- Si tienes términos de búsqueda + keywords: detecta qué queries reales activan cada keyword y qué porcentaje del gasto tiene 0 conversiones
+- Si tienes campañas + keywords: detecta keywords de bajo QS que están consumiendo presupuesto en campañas activas
+- Si tienes campañas + términos: identifica discrepancias entre intención de búsqueda y keywords configuradas
+- Indica en el informe cuando un hallazgo proviene del cruce de múltiples fuentes
+
+INSTRUCCIÓN IMPORTANTE: En checksCriticos incluye TODOS los checks evaluados. Para checks sin datos suficientes usa WARNING con hallazgo explicativo. Los arrays checksPMax/checksDemandGen/checksVideo solo se incluyen si ese tipo de campaña está activo.
+
+RESPONDE ÚNICAMENTE EN ESTE FORMATO JSON EXACTO (sin texto adicional):
+{
+  "cliente": "nombre",
+  "fecha": "fecha actual",
+  "tipoCuenta": "Search / Search+PMax / Full / Mixta",
+  "checksTotalesEvaluados": 0,
+  "healthScore": 0-100,
+  "grade": "A/B/C/D/F",
+  "subScores": {
+    "conversiones": 0-25,
+    "negativos": 0-20,
+    "estructura": 0-15,
+    "keywords": 0-15,
+    "anuncios": 0-15,
+    "configuracion": 0-10
+  },
+  "checksCriticos": [
+    {"id": "G42", "nombre": "Conversiones definidas", "resultado": "PASS/WARNING/FAIL", "hallazgo": "texto breve"}
+  ],
+  "checksPMax": [],
+  "checksDemandGen": [],
+  "checksVideo": [],
+  "problemas": [
+    {"titulo": "", "descripcion": "", "impactoEuros": 0, "tiempoFix": "", "pasos": []}
+  ],
+  "quickWins": [
+    {"accion": "", "impacto": "", "tiempo": ""}
+  ],
+  "flags": [],
+  "proximosPasos": {"semana1": [], "semana2": []},
+  "metricas": {
+    "cvr": 3.2,
+    "cpa": 45.0,
+    "ctr": 5.8,
+    "gastoSinConversion": 32.0,
+    "ratioNegativosKeywords": 2.1,
+    "qualityScore": 6.5,
+    "searchIS": 48.0
+  }
+}
+INSTRUCCIÓN PARA "metricas": extrae del CSV los valores reales de cuenta. Todos son números. Usa null si no hay datos suficientes para calcular ese campo. CVR/CTR/gastoSinConversion/searchIS van en % (ej: 5.2, no 0.052). CPA en € (número). qualityScore es la media ponderada por impresiones en escala 1-10. gastoSinConversion es el % del gasto total invertido en términos o keywords sin ninguna conversión registrada. ratioNegativosKeywords es el número de listas de negativos activas dividido entre el número de campañas o grupos de anuncios activos.`;
+
+/* ================================================
+   PREPROCESADO CSV
+   Devuelve { csv, total, resultado, modo }
+================================================ */
+function filtrarCSV(raw) {
+  const norm = s => s.toLowerCase().replace(/"/g,'').normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+
+  const allLines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const totalBruto = Math.max(0, allLines.length - 1);
+
+  if (allLines.length < 20) return { csv: raw, total: totalBruto, resultado: totalBruto, modo: 'sin filtro' };
+
+  // Detectar cabecera real (línea con coste + clics)
+  let headerIdx = -1;
+  for (let i = 0; i < Math.min(10, allLines.length); i++) {
+    const lower = allLines[i].toLowerCase();
+    if ((lower.includes('coste') || lower.includes('cost')) &&
+        (lower.includes('clic') || lower.includes('click'))) {
+      headerIdx = i;
+      break;
+    }
+  }
+
+  // Sin cabecera reconocida → fallback 3000 filas
+  if (headerIdx === -1) {
+    const limited = allLines.slice(0, 3001).join('\n');
+    return { csv: limited, total: totalBruto, resultado: Math.min(totalBruto, 3000), modo: 'fallback 3000 filas' };
+  }
+
+  const lines = allLines.slice(headerIdx);
+  if (lines.length < 20) return { csv: raw, total: totalBruto, resultado: totalBruto, modo: 'sin filtro' };
+
+  const cols = lines[0].split(',').map(norm);
+
+  // ── Filtro de fechas ──────────────────────────────────────
+  // Columnas aceptadas: Día / Day / Date / Fecha / dia / date
+  const NOMBRES_FECHA = ['dia', 'day', 'date', 'fecha'];
+  const iFecha = cols.findIndex(c => NOMBRES_FECHA.includes(c));
+
+  let workingLines = lines.slice(1);
+  let modoFiltro = 'sin columna de fecha';
+
+  if (iFecha !== -1) {
+    const parseDate = s => {
+      if (!s) return null;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(s);
+      const m = s.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
+      if (m) return new Date(`${m[3]}-${m[2]}-${m[1]}`);
+      return null;
+    };
+
+    const conFecha = workingLines.map(line => {
+      const parts = line.split(',').map(p => p.trim().replace(/"/g,''));
+      return { line, date: parseDate(parts[iFecha]) };
+    });
+
+    const validas = conFecha.filter(r => r.date && !isNaN(r.date));
+
+    if (validas.length >= 5) {
+      const maxTs  = Math.max(...validas.map(r => r.date.getTime()));
+      const maxDate = new Date(maxTs);
+      const cutoff  = new Date(maxTs - 14 * 864e5); // 14 días en ms
+
+      const filtradas = conFecha.filter(r => r.date && r.date >= cutoff).map(r => r.line);
+
+      if (filtradas.length >= 5) {
+        workingLines = filtradas;
+        modoFiltro = `últimos 14 días (hasta ${maxDate.toLocaleDateString('es-ES')})`;
+      } else {
+        modoFiltro = 'CSV de resumen (sin desglose diario)';
       }
-    }, 1200);
-  }
-
-  function resetAudit() {
-    document.getElementById('results').style.display = 'none';
-    document.getElementById('st-empty').style.display = 'flex';
-  }
-
-  function clearCsvSlot(slot) {
-    if(slot === 2) {
-      document.getElementById('f-file-2').value = '';
-      document.getElementById('file-info-2').innerText = '';
+    } else {
+      modoFiltro = 'fechas no reconocidas';
     }
   }
 
-  function handleFile(input, slot) {
-    const info = slot === 1 ? document.getElementById('file-info') : document.getElementById('file-info-2');
-    if(input.files && input.files[0]) {
-      info.innerText = '✓ ' + input.files[0].name;
-    }
+  // ── Filtro por coste/conversiones ─────────────────────────
+  const iCoste = cols.findIndex(c => c === 'coste' || c === 'cost');
+  const iConv  = cols.findIndex(c => c === 'conversiones' || c === 'conversions');
+  const totalTras = workingLines.length;
+
+  if (iCoste === -1 || iConv === -1) {
+    const limited = [lines[0], ...workingLines.slice(0, 3000)].join('\n');
+    return { csv: limited, total: totalBruto, resultado: Math.min(totalTras, 3000), modo: modoFiltro };
   }
+
+  let gastoTotal = 0;
+  const conGasto = [];
+  const conConv  = [];
+
+  for (const line of workingLines) {
+    const parts = line.split(',').map(p => p.trim().replace(/"/g,'').replace(',','.'));
+    const coste = parseFloat(parts[iCoste]) || 0;
+    const conv  = parseFloat(parts[iConv])  || 0;
+    gastoTotal += coste;
+    if (conv > 0) conConv.push({ line, coste, conv });
+    else if (coste > 0) conGasto.push({ line, coste });
+  }
+
+  conGasto.sort((a, b) => b.coste - a.coste);
+  conConv.sort((a, b) => b.coste - a.coste);
+
+  const selConv  = conConv.slice(0, 20);
+  const selGasto = conGasto.slice(0, 150 - selConv.length);
+  const sel      = [...selConv, ...selGasto].sort((a, b) => b.coste - a.coste);
+
+  const csv = [
+    `[PREPROCESADO: ${totalBruto} filas originales | Filtro: ${modoFiltro} | Gasto total: ${gastoTotal.toFixed(2)}€ | Mostrando ${sel.length} filas]`,
+    lines[0],
+    ...sel.map(r => r.line)
+  ].join('\n');
+
+  return { csv, total: totalBruto, resultado: sel.length, modo: modoFiltro };
+}
+
+/* ================================================
+   FUNCIÓN PRINCIPAL: EJECUTAR AUDITORÍA
+================================================ */
+async function runAudit() {
+  const cliente  = document.getElementById('f-cliente').value.trim();
+  const sector   = document.getElementById('f-sector').value;
+  const ciudad   = document.getElementById('f-ciudad').value.trim();
+  const gasto    = document.getElementById('f-gasto').value;
+  const tamano   = document.getElementById('f-tamano').value;
+  const cpa      = document.getElementById('f-cpa').value;
+  const objetivo = document.getElementById('f-objetivo').value;
+  const campanas = getCampanas();
+
+  // CSV 1 — principal
+  const activeTab = document.getElementById('tab-file').classList.contains('active') ? 'file' : 'paste';
+  const datos1 = activeTab === 'file'
+    ? (window._fileData1 || '').trim()
+    : document.getElementById('f-datos').value.trim();
+
+  // CSV 2 — opcional
+  const activeTab2 = document.getElementById('tab2-file').classList.contains('active') ? 'file' : 'paste';
+  const datos2 = activeTab2 === 'file'
+    ? (window._fileData2 || '').trim()
+    : document.getElementById('f-datos2').value.trim();
+
+  // CSV 3 — opcional
+  const activeTab3 = document.getElementById('tab3-file').classList.contains('active') ? 'file' : 'paste';
+  const datos3 = activeTab3 === 'file'
+    ? (window._fileData3 || '').trim()
+    : document.getElementById('f-datos3').value.trim();
+
+  if (!cliente) { showErr('Introduce el nombre del cliente.'); return; }
+  if (!datos1) {
+    showErr(activeTab === 'file'
+      ? 'Sube al menos el CSV 1 exportado de Google Ads.'
+      : 'Pega los datos del CSV 1 o carga los datos de prueba.');
+    return;
+  }
+
+  // Filtrar y construir bloque de datos
+  const r1 = filtrarCSV(datos1);
+  const r2 = datos2 ? filtrarCSV(datos2) : null;
+  const r3 = datos3 ? filtrarCSV(datos3) : null;
+
+  const d1Filtrado = r1.csv;
+  const d2Filtrado = r2 ? r2.csv : '';
+  const d3Filtrado = r3 ? r3.csv : '';
+
+  // Mostrar cuántas filas se procesan vs totales
+  const infoEl = document.getElementById('audit-row-info');
+  if (infoEl) {
+    const totalTotal  = r1.total + (r2?.total || 0) + (r3?.total || 0);
+    const totalResult = r1.resultado + (r2?.resultado || 0) + (r3?.resultado || 0);
+    infoEl.textContent = totalTotal > totalResult
+      ? `Procesando ${totalResult.toLocaleString('es-ES')} filas de ${totalTotal.toLocaleString('es-ES')} totales`
+      : '';
+  }
+
+  const fuentesCount = [datos1, datos2, datos3].filter(d => d).length;
+
+  let bloquesDatos = `=== CSV 1 — DATOS PRINCIPALES ===\n${d1Filtrado}`;
+  if (d2Filtrado) bloquesDatos += `\n\n=== CSV 2 — DATOS ADICIONALES ===\n${d2Filtrado}`;
+  if (d3Filtrado) bloquesDatos += `\n\n=== CSV 3 — DATOS ADICIONALES ===\n${d3Filtrado}`;
+  if (fuentesCount > 1) {
+    bloquesDatos = `[ANÁLISIS MULTI-FUENTE: ${fuentesCount} CSVs cargados — cruza la información entre ellos]\n\n` + bloquesDatos;
+  }
+
+  const tamanoLabel = { pequeña: 'Pequeña (<500€/mes)', media: 'Media (500-2000€/mes)', grande: 'Grande (>2000€/mes)' }[tamano] || tamano;
+
+  showState('st-load');
+  const btn = document.getElementById('btn-run');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spin"></div><span>Analizando cuenta...</span>';
+
+  const fecha = new Date().toLocaleDateString('es-ES', { day:'2-digit', month:'2-digit', year:'numeric' });
+  const hora  = new Date().toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit' });
+
+  const userMsg = `Audita la siguiente cuenta de Google Ads:
+
+DATOS DEL CLIENTE:
+- Nombre: ${cliente || 'No especificado'}
+- Sector: ${sector || 'No especificado'}
+- Ciudad objetivo: ${ciudad || 'No especificada'}
+- Gasto mensual: ${gasto ? gasto + ' €' : 'No especificado'}
+- Tamaño de cuenta: ${tamanoLabel}
+- CPA objetivo: ${cpa ? cpa + ' €' : 'No especificado'}
+- Objetivo principal: ${objetivo || 'No especificado'}
+- Campañas activas: ${campanas}
+
+IMPORTANTE — aplica los umbrales correspondientes al tamaño de cuenta: ${tamanoLabel}
+
+DATOS EXPORTADOS DE GOOGLE ADS:
+${bloquesDatos}
+
+Fecha y hora del análisis: ${fecha} ${hora}
+
+Responde ÚNICAMENTE con el JSON solicitado. Sin texto adicional ni explicaciones fuera del JSON.`;
+
+  try {
+    const res = await fetch('/api/audit', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model:      'claude-sonnet-4-20250514',
+        max_tokens: 4000,
+        system:     SYSTEM_PROMPT,
+        messages:   [{ role: 'user', content: userMsg }]
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      const errMsg = data?.error?.message || `Error ${res.status}: ${res.statusText}`;
+      throw new Error(errMsg);
+    }
+
+    const rawText = data?.content?.[0]?.text || '';
+    let auditData;
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('La IA no devolvió un JSON válido. Respuesta: ' + rawText.slice(0, 300));
+    try {
+      auditData = JSON.parse(jsonMatch[0]);
+    } catch(e) {
+      throw new Error('JSON inválido en la respuesta: ' + e.message);
+    }
+
+    renderResults(auditData);
+    showState('results');
+    document.getElementById('pnl-r').scrollTo({ top: 0, behavior: 'smooth' });
+
+  } catch(err) {
+    showErr(err.message || 'Error desconocido. Revisa la consola del navegador.');
+  } finally {
+    resetBtn();
+  }
+}
+
+/* ================================================
+   RENDERIZAR RESULTADOS
+================================================ */
+function renderCheckBlock(titulo, checks) {
+  if (!checks?.length) return '';
+  let h = `<div class="card"><div class="card-title">${titulo}</div><div class="checks-grid">`;
+  checks.forEach(c => {
+    const { cls, icon, txt } = badge(c.resultado);
+    h += `
+    <div class="chk">
+      <div class="chk-tooltip">${esc(c.hallazgo)}</div>
+      <span class="chk-id">${esc(c.id)}</span>
+      <span class="chk-name">${esc(c.nombre)}</span>
+      <span class="chk-icon">${icon}</span>
+      <span class="badge ${cls}">${txt}</span>
+    </div>`;
+  });
+  h += `</div></div>`;
+  return h;
+}
+
+function applyDateRange(content) {
+  const labels = {
+    TODAY:        'hoy',
+    LAST_7_DAYS:  'últimos 7 días',
+    LAST_14_DAYS: 'últimos 14 días',
+    LAST_30_DAYS: 'últimos 30 días'
+  };
+  const dias = { TODAY: 1, LAST_7_DAYS: 7, LAST_14_DAYS: 14, LAST_30_DAYS: 30 };
+  return content
+    .replace(/%%DATE_RANGE%%/g, _mcpDateRange)
+    .replace(/%%DATE_LABEL%%/g,  labels[_mcpDateRange] || _mcpDateRange)
+    .replace(/(DIAS:\s+)\d+/, '$1' + (dias[_mcpDateRange] || 30));
+}
+
+function downloadScript(key, filename) {
+  const content = key === 'search' ? SCRIPT_SEARCH_CONTENT : SCRIPT_PMAX_CONTENT;
+  const resolved = applyDateRange(content);
+  const blob = new Blob([resolved], { type: 'text/javascript' });
+  const tmp = document.createElement('a');
+  tmp.href = URL.createObjectURL(blob);
+  tmp.download = filename;
+  tmp.click();
+  URL.revokeObjectURL(tmp.href);
+}
+
+function renderSemaforos(m) {
+  if (!m) return '';
+
+  const fmt = (v, dec, suf) =>
+    (v === null || v === undefined) ? null : (+v).toFixed(dec) + suf;
+
+  const items = [
+    {
+      label: 'CVR',
+      valor: fmt(m.cvr, 1, '%'),
+      color: m.cvr === null || m.cvr === undefined ? 'gris'
+           : m.cvr > 5    ? 'verde'
+           : m.cvr >= 2.5 ? 'naranja' : 'rojo'
+    },
+    {
+      label: 'CPA',
+      valor: m.cpa !== null && m.cpa !== undefined ? fmt(m.cpa, 0, '€') : null,
+      color: m.cpa === null || m.cpa === undefined ? 'gris'
+           : m.cpa < 50   ? 'verde'
+           : m.cpa <= 85  ? 'naranja' : 'rojo'
+    },
+    {
+      label: 'CTR',
+      valor: fmt(m.ctr, 1, '%'),
+      color: m.ctr === null || m.ctr === undefined ? 'gris'
+           : m.ctr > 7.5  ? 'verde'
+           : m.ctr >= 4   ? 'naranja' : 'rojo'
+    },
+    {
+      label: 'Gasto sin conv.',
+      valor: fmt(m.gastoSinConversion, 0, '%'),
+      color: m.gastoSinConversion === null || m.gastoSinConversion === undefined ? 'gris'
+           : m.gastoSinConversion < 25  ? 'verde'
+           : m.gastoSinConversion <= 50 ? 'naranja' : 'rojo'
+    },
+    {
+      label: 'Neg./Keywords',
+      valor: fmt(m.ratioNegativosKeywords, 1, ''),
+      color: m.ratioNegativosKeywords === null || m.ratioNegativosKeywords === undefined ? 'gris'
+           : m.ratioNegativosKeywords > 3   ? 'verde'
+           : m.ratioNegativosKeywords >= 1  ? 'naranja' : 'rojo'
+    },
+    {
+      label: 'Quality Score',
+      valor: fmt(m.qualityScore, 1, ''),
+      color: m.qualityScore === null || m.qualityScore === undefined ? 'gris'
+           : m.qualityScore > 6  ? 'verde'
+           : m.qualityScore >= 4 ? 'naranja' : 'rojo'
+    },
+    {
+      label: 'Search IS',
+      valor: fmt(m.searchIS, 0, '%'),
+      color: m.searchIS === null || m.searchIS === undefined ? 'gris'
+           : m.searchIS > 60  ? 'verde'
+           : m.searchIS >= 35 ? 'naranja' : 'rojo'
+    }
+  ];
+
+  let h = `<div class="card"><div class="card-title">SEMÁFORO DE MÉTRICAS</div><div class="semaforo-grid">`;
+  items.forEach(item => {
+    const sinDato = item.valor === null;
+    h += `
+    <div class="semaforo-card">
+      <div class="semaforo-circle sem-${item.color}">${sinDato ? '—' : esc(item.valor)}</div>
+      <div class="semaforo-label">${item.label}</div>
+      ${sinDato ? '<div class="semaforo-sin-dato">Sin datos</div>' : ''}
+    </div>`;
+  });
+  h += `</div></div>`;
+  return h;
+}
+
+function renderResults(d) {
+  window._auditData = d;
+
+  const sc    = d.healthScore ?? 0;
+  const color = scoreColor(sc);
+  const grade = d.grade || scoreGrade(sc);
+  const ss    = d.subScores || {};
+
+  let h = '<div class="results">';
+
+  /* --- BLOQUE 1: HEALTH SCORE --- */
+  h += `
+  <div class="card">
+    <div class="card-title">HEALTH SCORE</div>
+    <div class="hs-top">
+      <div>
+        <div class="hs-num" style="color:${color}" id="hs-num">0</div>
+        <div class="hs-grade" style="color:${color}">${esc(grade)}</div>
+      </div>
+      <div class="hs-meta">
+        <div class="hs-client">${esc(d.cliente || 'Cliente')}</div>
+        <div class="hs-date">${esc(d.fecha || new Date().toLocaleDateString('es-ES'))}</div>
+        <div class="hs-bar-wrap">
+          <div class="hs-bar" id="hs-bar" style="width:0%;background:${color}"></div>
+        </div>
+      </div>
+    </div>
+    <div class="ss-grid">
+      <div class="ss-item">
+        <div class="ss-lbl">Conversiones</div>
+        <div class="ss-val">${ss.conversiones ?? '—'}<span class="ss-max">/25</span></div>
+      </div>
+      <div class="ss-item">
+        <div class="ss-lbl">Negativos</div>
+        <div class="ss-val">${ss.negativos ?? '—'}<span class="ss-max">/20</span></div>
+      </div>
+      <div class="ss-item">
+        <div class="ss-lbl">Estructura</div>
+        <div class="ss-val">${ss.estructura ?? '—'}<span class="ss-max">/15</span></div>
+      </div>
+      <div class="ss-item">
+        <div class="ss-lbl">Keywords</div>
+        <div class="ss-val">${ss.keywords ?? '—'}<span class="ss-max">/15</span></div>
+      </div>
+      <div class="ss-item">
+        <div class="ss-lbl">Anuncios</div>
+        <div class="ss-val">${ss.anuncios ?? '—'}<span class="ss-max">/15</span></div>
+      </div>
+      <div class="ss-item">
+        <div class="ss-lbl">Configuración</div>
+        <div class="ss-val">${ss.configuracion ?? '—'}<span class="ss-max">/10</span></div>
+      </div>
+    </div>
+    ${(d.tipoCuenta || d.checksTotalesEvaluados) ? `
+    <div class="hs-meta-row">
+      ${d.tipoCuenta ? `<span class="hs-tipo">${esc(d.tipoCuenta)}</span>` : ''}
+      ${d.checksTotalesEvaluados ? `<span class="hs-checks">${d.checksTotalesEvaluados} checks evaluados</span>` : ''}
+    </div>` : ''}
+  </div>`;
+
+  /* --- BLOQUE 1b: SEMÁFORO DE MÉTRICAS --- */
+  h += renderSemaforos(d.metricas);
+
+  /* --- BLOQUE 2: CHECKS CRÍTICOS --- */
+  if (d.checksCriticos?.length) {
+    h += `<div class="card"><div class="card-title">CHECKS CRÍTICOS</div><div class="checks-grid">`;
+    d.checksCriticos.forEach(c => {
+      const { cls, icon, txt } = badge(c.resultado);
+      h += `
+      <div class="chk">
+        <div class="chk-tooltip">${esc(c.hallazgo)}</div>
+        <span class="chk-id">${esc(c.id)}</span>
+        <span class="chk-name">${esc(c.nombre)}</span>
+        <span class="chk-icon">${icon}</span>
+        <span class="badge ${cls}">${txt}</span>
+      </div>`;
+    });
+    h += `</div></div>`;
+  }
+
+  h += renderCheckBlock('CHECKS PMAX', d.checksPMax);
+  h += renderCheckBlock('CHECKS DEMAND GEN', d.checksDemandGen);
+  h += renderCheckBlock('CHECKS VIDEO / YOUTUBE', d.checksVideo);
+
+  /* --- BLOQUE 3: TOP PROBLEMAS --- */
+  if (d.problemas?.length) {
+    h += `<div class="card"><div class="card-title">TOP PROBLEMAS</div>`;
+    d.problemas.slice(0,3).forEach((p, i) => {
+      const steps = (p.pasos || []).map(s => `<li>${esc(s)}</li>`).join('');
+      h += `
+      <div class="prob">
+        <div class="prob-n">${i+1}</div>
+        <div class="prob-t">${esc(p.titulo)}</div>
+        <div class="prob-d">${esc(p.descripcion)}</div>
+        ${p.impactoEuros ? `<div class="prob-eur">−${Number(p.impactoEuros).toLocaleString('es-ES')} €</div><div class="prob-eur-lbl">IMPACTO ECONÓMICO ESTIMADO</div>` : ''}
+        ${p.tiempoFix ? `<span class="prob-fix">⏱ ${esc(p.tiempoFix)}</span>` : ''}
+        ${steps ? `<ul class="prob-steps">${steps}</ul>` : ''}
+      </div>`;
+    });
+    h += `</div>`;
+  }
+
+  /* --- BLOQUE 4: QUICK WINS --- */
+  if (d.quickWins?.length) {
+    h += `<div class="card"><div class="card-title">QUICK WINS</div>`;
+    d.quickWins.slice(0,3).forEach((qw, i) => {
+      h += `
+      <div class="qw">
+        <div class="qw-n">${i+1}</div>
+        <div class="qw-body">
+          <div class="qw-act">${esc(qw.accion)}</div>
+          <div class="qw-imp">↑ ${esc(qw.impacto)}</div>
+          ${qw.tiempo ? `<span class="qw-time">${esc(qw.tiempo)}</span>` : ''}
+        </div>
+      </div>`;
+    });
+    h += `</div>`;
+  }
+
+  /* --- BLOQUE 5: FLAGS --- */
+  if (d.flags?.length) {
+    h += `<div class="card"><div class="card-title">FLAGS ESPECIALES</div>`;
+    d.flags.forEach(f => {
+      h += `
+      <div class="flag-item">
+        <span class="flag-ico">🚩</span>
+        <div class="flag-txt">${esc(typeof f === 'string' ? f : JSON.stringify(f))}</div>
+      </div>`;
+    });
+    h += `</div>`;
+  }
+
+  /* --- BLOQUE 6: PRÓXIMOS PASOS --- */
+  if (d.proximosPasos) {
+    const s1 = d.proximosPasos.semana1 || [];
+    const s2 = d.proximosPasos.semana2 || [];
+    h += `
+    <div class="card">
+      <div class="card-title">PRÓXIMOS PASOS</div>
+      <div class="tl-grid">
+        <div class="tl-week">
+          <div class="tl-wlbl">SEMANA 1</div>
+          ${s1.map(t=>`<div class="tl-item"><div class="tl-dot"></div><div class="tl-txt">${esc(t)}</div></div>`).join('')}
+        </div>
+        <div class="tl-week">
+          <div class="tl-wlbl">SEMANA 2</div>
+          ${s2.map(t=>`<div class="tl-item"><div class="tl-dot"></div><div class="tl-txt">${esc(t)}</div></div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  /* --- BOTONES DE ACCIÓN --- */
+  h += `
+  <div class="act-btns">
+    <button class="btn-copy" id="btn-copy" onclick="copyReport()">📋 COPIAR INFORME</button>
+    <button class="btn-pdf" onclick="downloadPDF()">📄 DESCARGAR PDF</button>
+    <button class="btn-new" onclick="newAudit()">NUEVA AUDITORÍA</button>
+  </div>`;
+
+  /* --- ACCIONES RÁPIDAS --- */
+  const acciones = [];
+  const cbChecked = [...document.querySelectorAll('.cb-row input:checked')].map(c => c.value);
+  if (cbChecked.includes('Search'))     acciones.push({ label: 'SCRIPT NEGATIVOS SEARCH', file: '/downloads/script-negativos-search.js', content: SCRIPT_SEARCH_CONTENT });
+  if (cbChecked.includes('PMax'))       acciones.push({ label: 'SCRIPT NEGATIVOS PMAX',   file: '/downloads/script-negativos-pmax.js', content: SCRIPT_PMAX_CONTENT });
+  if (cbChecked.includes('Demand Gen')) acciones.push({ label: 'CSV DEMAND GEN',           file: '/downloads/csv-demand-gen.csv' });
+  if (cbChecked.includes('Video'))      acciones.push({ label: 'CSV YOUTUBE',               file: '/downloads/csv-youtube.csv' });
+
+  if (acciones.length) {
+    h += `<div class="card"><div class="card-title">ACCIONES RÁPIDAS</div><div class="aq-grid">`;
+    acciones.forEach(a => {
+      if (a.content) {
+        const fn  = a.file.split('/').pop();
+        const key = fn.includes('search') ? 'search' : 'pmax';
+        h += `<a class="btn-aq" href="#" onclick="downloadScript('${key}','${fn}');return false;">${a.label}</a>`;
+        const resolved = applyDateRange(a.content);
+        h += `<pre class="print-only">${resolved.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>`;
+      } else {
+        h += `<a class="btn-aq" href="${a.file}" download>${a.label}</a>`;
+      }
+    });
+    h += `</div></div>`;
+  }
+
+  h += '</div>';
+  document.getElementById('results').innerHTML = h;
+
+  animateScore(sc);
+  setTimeout(() => {
+    const bar = document.getElementById('hs-bar');
+    if (bar) bar.style.width = sc + '%';
+  }, 80);
+}
+
+function animateScore(target) {
+  const el = document.getElementById('hs-num');
+  if (!el) return;
+  let current = 0;
+  const step = Math.ceil(target / 40);
+  const timer = setInterval(() => {
+    current = Math.min(current + step, target);
+    el.textContent = current;
+    if (current >= target) clearInterval(timer);
+  }, 25);
+}
+
+/* ================================================
+   COPIAR INFORME AL PORTAPAPELES
+================================================ */
+function copyReport() {
+  const d = window._auditData;
+  if (!d) return;
+  const ss = d.subScores || {};
+  let txt = `INFORME DE AUDITORÍA GOOGLE ADS\nADS ENGINE AUDIT V2.0 — 80 checks Rocha\n${'='.repeat(40)}\n\n`;
+  txt += `CLIENTE: ${d.cliente}\nFECHA: ${d.fecha}\n`;
+  txt += `TIPO DE CUENTA: ${d.tipoCuenta || 'N/D'} | CHECKS EVALUADOS: ${d.checksTotalesEvaluados || 'N/D'}\n`;
+  txt += `HEALTH SCORE: ${d.healthScore}/100 — GRADE ${d.grade}\n\n`;
+  txt += `SUB-SCORES:\n`;
+  txt += `  Conversiones: ${ss.conversiones}/25\n`;
+  txt += `  Negativos:    ${ss.negativos}/20\n`;
+  txt += `  Estructura:   ${ss.estructura}/15\n`;
+  txt += `  Keywords:     ${ss.keywords}/15\n`;
+  txt += `  Anuncios:     ${ss.anuncios}/15\n`;
+  txt += `  Configuración:${ss.configuracion}/10\n\n`;
+
+  txt += `CHECKS CRÍTICOS:\n`;
+  (d.checksCriticos||[]).forEach(c => {
+    txt += `  [${c.resultado}] ${c.id} — ${c.nombre}: ${c.hallazgo}\n`;
+  });
+
+  if (d.checksPMax?.length) {
+    txt += `\nCHECKS PMAX:\n`;
+    d.checksPMax.forEach(c => { txt += `  [${c.resultado}] ${c.id} — ${c.nombre}: ${c.hallazgo}\n`; });
+  }
+  if (d.checksDemandGen?.length) {
+    txt += `\nCHECKS DEMAND GEN:\n`;
+    d.checksDemandGen.forEach(c => { txt += `  [${c.resultado}] ${c.id} — ${c.nombre}: ${c.hallazgo}\n`; });
+  }
+  if (d.checksVideo?.length) {
+    txt += `\nCHECKS VIDEO / YOUTUBE:\n`;
+    d.checksVideo.forEach(c => { txt += `  [${c.resultado}] ${c.id} — ${c.nombre}: ${c.hallazgo}\n`; });
+  }
+
+  txt += `\nTOP PROBLEMAS:\n`;
+  (d.problemas||[]).forEach((p,i) => {
+    txt += `\n  ${i+1}. ${p.titulo}\n     ${p.descripcion}\n`;
+    if (p.impactoEuros) txt += `     Impacto: −${p.impactoEuros} €\n`;
+    if (p.tiempoFix)    txt += `     Fix: ${p.tiempoFix}\n`;
+    (p.pasos||[]).forEach(s => { txt += `     • ${s}\n`; });
+  });
+
+  txt += `\nQUICK WINS:\n`;
+  (d.quickWins||[]).forEach((qw,i) => {
+    txt += `  ${i+1}. ${qw.accion}\n     Impacto: ${qw.impacto} | Tiempo: ${qw.tiempo}\n`;
+  });
+
+  if (d.flags?.length) {
+    txt += `\nFLAGS ESPECIALES:\n`;
+    d.flags.forEach(f => { txt += `  🚩 ${f}\n`; });
+  }
+
+  txt += `\nPRÓXIMOS PASOS:\n`;
+  txt += `  SEMANA 1:\n`;
+  (d.proximosPasos?.semana1||[]).forEach(p => { txt += `    • ${p}\n`; });
+  txt += `  SEMANA 2:\n`;
+  (d.proximosPasos?.semana2||[]).forEach(p => { txt += `    • ${p}\n`; });
+
+  txt += `\n${'—'.repeat(40)}\nADS ENGINE AUDIT V2.0\nFrancisco Blanco © 2026 — franciscoblanco.net`;
+
+  navigator.clipboard.writeText(txt).then(() => {
+    const b = document.getElementById('btn-copy');
+    if (b) { b.textContent = '✓ COPIADO'; setTimeout(() => { b.textContent = 'COPIAR INFORME'; }, 2200); }
+  }).catch(() => alert('No se pudo copiar automáticamente. Usa Ctrl+A en el panel para seleccionar el texto.'));
+}
+
+/* ================================================
+   NUEVA AUDITORÍA — RESET COMPLETO
+================================================ */
+function newAudit() {
+  ['f-cliente','f-ciudad','f-gasto','f-cpa','f-datos','f-datos2','f-datos3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('f-sector').value   = '';
+  document.getElementById('f-objetivo').value = '';
+  document.getElementById('f-tamano').value   = 'media';
+  document.querySelectorAll('.cb-row input').forEach(cb => { cb.checked = false; });
+
+  switchTab('file');
+  switchTab2('file');
+  switchTab3('file');
+  window._fileData1 = null;
+  window._fileData2 = null;
+  window._fileData3 = null;
+  ['file-info','file-info2','file-info3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = '';
+  });
+  ['f-file','f-file2','f-file3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('csv-sources-summary').style.display = 'none';
+
+  document.getElementById('results').innerHTML = '';
+  window._auditData = null;
+  showState('st-empty');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ---- PRELOAD SCRIPT CONTENT FOR PDF ---- */
+let SCRIPT_SEARCH_CONTENT = '';
+let SCRIPT_PMAX_CONTENT   = '';
+fetch('/downloads/script-negativos-search.js').then(r => r.text()).then(t => { SCRIPT_SEARCH_CONTENT = t; }).catch(() => {});
+fetch('/downloads/script-negativos-pmax.js').then(r => r.text()).then(t => { SCRIPT_PMAX_CONTENT   = t; }).catch(() => {});
 </script>
-
 </body>
 </html>
