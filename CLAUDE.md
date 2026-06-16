@@ -35,7 +35,7 @@ No hay tests ni linter configurados.
 
 | Variable | Uso |
 |---|---|
-| `ANTHROPIC_API_KEY` | API de Claude (claude-sonnet-4-20250514) |
+| `ANTHROPIC_API_KEY` | API de Claude (claude-sonnet-4-6) |
 | `MCP_URL` | Base URL del conector Google Ads MCP |
 | `MCP_API_KEY` | API key del MCP — nunca sale al navegador |
 | `MOTOR_PASSWORD` | Contraseña de acceso a la app (opcional) |
